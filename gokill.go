@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 
+	"unknown.com/gokill/internal"
 	"unknown.com/gokill/triggers"
 )
 
@@ -74,7 +75,7 @@ func main() {
 ]
 	`)
 
-	var f []triggers.KillSwitchConfig
+	var f []internal.KillSwitchConfig
 	err := json.Unmarshal(b, &f)
 
 	if err != nil {
