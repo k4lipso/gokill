@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"os"
 
 	"unknown.com/gokill/actions"
 	"unknown.com/gokill/internal"
@@ -37,64 +38,7 @@ func GetDocumentation() string {
 }
 
 func main() {
-	b := []byte(`
-
-[
-    {
-        "type": "TimeOut", 
-        "name": "custom timeout",
-        "options": {
-            "duration": 5
-        },
-        "actions": [
-            {
-                "type": "TimeOut",
-                "options": {
-                    "duration": 4
-                },
-                "stage": 1
-            },
-            {
-                "type": "Print",
-                "options": {
-                    "message": "shutdown -h now"
-                },
-                "stage": 1
-            },
-            {
-                "type": "Print",
-                "options": {
-                    "message": "shutdown -h now"
-                },
-                "stage": 2 
-            },
-            {
-                "type": "TimeOut",
-                "options": {
-                    "duration": 4
-                },
-                "stage": 5
-            },
-            {
-                "type": "Print",
-                "options": {
-                    "message": "shutdown -h now"
-                },
-                "stage": 4
-            },
-            {
-                "type": "Print",
-                "options": {
-                    "message": "shutdown -h now"
-                },
-                "stage": 7 
-            }
-        ]
-    }
-]
-	`)
-
-	configFile := flag.String("c", "", "path to config file")
+	configFilePath := flag.String("c", "", "path to config file")
 	showDoc := flag.Bool("d", false, "show doc")
 	flag.Parse()
 
@@ -103,13 +47,20 @@ func main() {
 		return
 	}
 
-	if *configFile == "" {
+	if *configFilePath == "" {
 		fmt.Println("No config file given. Use --help to show usage.")
-		//return
+		return
+	}
+
+	configFile, err := os.ReadFile(*configFilePath)
+
+	if err != nil {
+		fmt.Println("Error loading config file: ", err)
+		return
 	}
 
 	var f []internal.KillSwitchConfig
-	err := json.Unmarshal(b, &f)
+	err = json.Unmarshal(configFile, &f)
 
 	if err != nil {
 		fmt.Println(err)
