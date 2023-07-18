@@ -17,3 +17,9 @@ func NewTrigger(config internal.KillSwitchConfig) (Trigger, error) {
 
 	return nil, fmt.Errorf("Error parsing config: Trigger with type %s does not exists", config.Type)
 }
+
+func GetDocumenters() []internal.Documenter {
+	return []internal.Documenter{
+		TimeOut{},
+	}
+}

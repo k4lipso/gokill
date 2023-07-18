@@ -38,3 +38,17 @@ func NewTimeOut(config internal.KillSwitchConfig) (TimeOut, error) {
 
 	return TimeOut{time.Duration(duration.(float64)) * time.Second, action}, nil
 }
+
+func (p TimeOut) GetName() string {
+	return "TimeOut"
+}
+
+func (p TimeOut) GetDescription() string {
+	return "Triggers after given duration."
+}
+
+func (p TimeOut) GetOptions() []internal.ConfigOption {
+	return []internal.ConfigOption{
+		{"duration", "string", "duration in seconds", "0"},
+	}
+}

@@ -24,3 +24,16 @@ type KillSwitchConfig struct {
 	Options Options        `json:"options"`
 	Actions []ActionConfig `json:"actions"`
 }
+
+type ConfigOption struct {
+	Name        string
+	Type        string
+	Description string
+	Default     string
+}
+
+type Documenter interface {
+	GetName() string
+	GetDescription() string
+	GetOptions() []ConfigOption
+}

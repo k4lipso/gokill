@@ -87,3 +87,10 @@ func NewAction(config []internal.ActionConfig) (Action, error) {
 	return stagedActions, nil
 	//return Action{}, fmt.Errorf("Error parsing config: Action with type %s does not exists", config.Type)
 }
+
+func GetDocumenters() []internal.Documenter {
+	return []internal.Documenter{
+		Printer{},
+		TimeOut{},
+	}
+}

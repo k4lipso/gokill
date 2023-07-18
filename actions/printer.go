@@ -26,3 +26,17 @@ func NewPrint(config internal.ActionConfig, c chan bool) (Action, error) {
 
 	return Printer{fmt.Sprintf("%v", message), c}, nil
 }
+
+func (p Printer) GetName() string {
+	return "Print"
+}
+
+func (p Printer) GetDescription() string {
+	return "When triggered prints the configured message to stdout"
+}
+
+func (p Printer) GetOptions() []internal.ConfigOption {
+	return []internal.ConfigOption{
+		{"message", "string", "Message that should be printed", "\"\""},
+	}
+}

@@ -28,3 +28,17 @@ func NewTimeOut(config internal.ActionConfig, c chan bool) (Action, error) {
 
 	return TimeOut{time.Duration(duration.(float64)) * time.Second, c}, nil
 }
+
+func (p TimeOut) GetName() string {
+	return "TimeOut"
+}
+
+func (p TimeOut) GetDescription() string {
+	return "When triggered waits given duration before continuing with next stage"
+}
+
+func (p TimeOut) GetOptions() []internal.ConfigOption {
+	return []internal.ConfigOption{
+		{"duration", "string", "duration in seconds", "0"},
+	}
+}

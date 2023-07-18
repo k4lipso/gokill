@@ -5,19 +5,38 @@ import (
 	"flag"
 	"fmt"
 
+	"unknown.com/gokill/actions"
 	"unknown.com/gokill/internal"
 	"unknown.com/gokill/triggers"
 )
 
-func main() {
-	configFile := flag.String("c", "", "path to config file")
-	flag.Parse()
+func GetDocumentation() string {
+	actions := actions.GetDocumenters()
 
-	if *configFile == "" {
-		fmt.Println("No config file given. Use --help to show usage.")
-		//return
+	result := "Available Actions:\n\n"
+	lineBreak := "----------------------------"
+
+	writeOptions := func(documenters []internal.Documenter) {
+		for _, act := range documenters {
+			result += lineBreak
+			result += fmt.Sprintf("\nName: %v\nDescription: %v\nValues:\n", act.GetName(), act.GetDescription())
+
+			for _, opt := range act.GetOptions() {
+				result += fmt.Sprintf("\tName: %v\n\tType: %v\n\tDescr: %v\n\tDefault: %v\n",
+					opt.Name, opt.Type, opt.Description, opt.Default)
+				result += lineBreak + "\n\n"
+			}
+		}
 	}
 
+	writeOptions(actions)
+	result += "\n\nAvailable Triggers:\n\n"
+	writeOptions(triggers.GetDocumenters())
+
+	return result
+}
+
+func main() {
 	b := []byte(`
 
 [
@@ -75,6 +94,20 @@ func main() {
 ]
 	`)
 
+	configFile := flag.String("c", "", "path to config file")
+	showDoc := flag.Bool("d", false, "show doc")
+	flag.Parse()
+
+	if *showDoc {
+		fmt.Print(GetDocumentation())
+		return
+	}
+
+	if *configFile == "" {
+		fmt.Println("No config file given. Use --help to show usage.")
+		//return
+	}
+
 	var f []internal.KillSwitchConfig
 	err := json.Unmarshal(b, &f)
 
@@ -83,36 +116,17 @@ func main() {
 		return
 	}
 
-	trigger, err := triggers.NewTrigger(f[0])
+	var triggerList []triggers.Trigger
+	for _, cfg := range f {
+		trigger, err := triggers.NewTrigger(cfg)
 
-	if err != nil {
-		fmt.Println(err)
-		return
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		trigger.Listen() //TODO: not block here
+		triggerList = append(triggerList, trigger)
 	}
 
-	trigger.Listen()
-
-	//stagedActions := actions.StagedActions{make(chan bool), 0, []actions.Stage{}}
-
-	//stageOne := actions.Stage{[]actions.Action{
-	//	actions.Printer{"first action\n", stagedActions.ActionChan},
-	//	actions.Printer{"second actiloo\n", stagedActions.ActionChan},
-	//	actions.TimeOut{stagedActions.ActionChan},
-	//}}
-
-	//stageTwo := actions.Stage{[]actions.Action{
-	//	actions.Printer{"third action\n", stagedActions.ActionChan},
-	//	actions.TimeOut{stagedActions.ActionChan},
-	//}}
-
-	//stageThree := actions.Stage{[]actions.Action{
-	//	actions.Printer{"four action\n", stagedActions.ActionChan},
-	//	actions.Printer{"five action\n", stagedActions.ActionChan},
-	//	actions.Printer{"six action\n", stagedActions.ActionChan},
-	//}}
-
-	//stagedActions.Stages = []actions.Stage{stageOne, stageTwo, stageThree}
-
-	//timeOut := triggers.NewTimeOut(2*time.Second, stagedActions)
-	//timeOut.Listen()
 }
