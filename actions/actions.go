@@ -47,6 +47,10 @@ func NewSingleAction(config internal.ActionConfig, c chan bool) (Action, error) 
 		return NewTimeOut(config, c)
 	}
 
+	if config.Type == "Shutdown" {
+		return NewShutdown(config, c)
+	}
+
 	return nil, fmt.Errorf("Error parsing config: Action with type %s does not exists", config.Type)
 }
 
@@ -92,5 +96,6 @@ func GetDocumenters() []internal.Documenter {
 	return []internal.Documenter{
 		Printer{},
 		TimeOut{},
+		Shutdown{},
 	}
 }
