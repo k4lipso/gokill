@@ -1,6 +1,7 @@
 package actions
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"unknown.com/gokill/internal"
@@ -17,14 +18,15 @@ func (p Printer) Execute() {
 }
 
 func NewPrint(config internal.ActionConfig, c chan bool) (Action, error) {
-	opts := config.Options
-	message, ok := opts["message"]
+	var result Printer
+	err := json.Unmarshal(config.Options, &result)
 
-	if !ok {
+	if err != nil {
 		return nil, internal.OptionMissingError{"message"}
 	}
 
-	return Printer{fmt.Sprintf("%v", message), c}, nil
+	result.ActionChan = c
+	return result, nil
 }
 
 func (p Printer) GetName() string {

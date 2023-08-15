@@ -1,6 +1,7 @@
 package actions
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -19,14 +20,15 @@ func (t TimeOut) Execute() {
 }
 
 func NewTimeOut(config internal.ActionConfig, c chan bool) (Action, error) {
-	opts := config.Options
-	duration, ok := opts["duration"]
+	var result TimeOut
+	err := json.Unmarshal(config.Options, &result)
 
-	if !ok {
+	if err != nil {
 		return nil, internal.OptionMissingError{"duration"}
 	}
 
-	return TimeOut{time.Duration(duration.(float64)) * time.Second, c}, nil
+	result.ActionChan = c
+	return result, nil
 }
 
 func (p TimeOut) GetName() string {
