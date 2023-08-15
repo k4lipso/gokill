@@ -10,19 +10,20 @@ import (
 )
 
 type TimeOut struct {
-	d      time.Duration
-	action actions.Action
+	Duration int
+	action   actions.Action
 }
 
 func (t TimeOut) Listen() {
 	fmt.Println("TimeOut listens")
-	time.Sleep(t.d)
+	fmt.Println(t.Duration)
+	time.Sleep(time.Duration(t.Duration) * time.Second)
 	fmt.Println("TimeOut fires")
-	t.action.Execute()
+	actions.Fire(t.action)
 }
 
 func NewTimeOut(config internal.KillSwitchConfig) (TimeOut, error) {
-	result := TimeOut{d: 0 * time.Second}
+	var result TimeOut
 	err := json.Unmarshal(config.Options, &result)
 
 	if err != nil {

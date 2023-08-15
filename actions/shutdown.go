@@ -11,6 +11,13 @@ type Shutdown struct {
 	ActionChan chan bool
 }
 
+func (c Shutdown) DryExecute() {
+	fmt.Println("Test Shutdown executed...")
+
+	c.ActionChan <- true
+
+}
+
 func (c Shutdown) Execute() {
 	if err := exec.Command("shutdown", "-h", "now").Run(); err != nil {
 		fmt.Println("Failed to initiate shutdown:", err)

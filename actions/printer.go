@@ -17,6 +17,11 @@ func (p Printer) Execute() {
 	p.ActionChan <- true
 }
 
+func (p Printer) DryExecute() {
+	fmt.Printf("Print action fire test. Message: %s", p.Message)
+	p.ActionChan <- true
+}
+
 func NewPrint(config internal.ActionConfig, c chan bool) (Action, error) {
 	var result Printer
 	err := json.Unmarshal(config.Options, &result)

@@ -40,6 +40,8 @@ func GetDocumentation() string {
 func main() {
 	configFilePath := flag.String("c", "", "path to config file")
 	showDoc := flag.Bool("d", false, "show doc")
+	testRun := flag.Bool("t", false, "test run")
+
 	flag.Parse()
 
 	if *showDoc {
@@ -51,6 +53,8 @@ func main() {
 		fmt.Println("No config file given. Use --help to show usage.")
 		return
 	}
+
+	actions.TestRun = *testRun
 
 	configFile, err := os.ReadFile(*configFilePath)
 

@@ -25,7 +25,6 @@ func isEthernetConnected(deviceName string) bool {
 	}
 
 	if string(content[:4]) == "down" {
-		fmt.Println("Ethernet is disconnected")
 		return false
 	}
 
@@ -33,25 +32,21 @@ func isEthernetConnected(deviceName string) bool {
 }
 
 func (t EthernetDisconnect) Listen() {
-	fmt.Println("EthernetDisconnect listens")
-
 	if t.WaitTillConnected {
-		for !isEthernetConnected("enp0s31f6") {
+		for !isEthernetConnected(t.InterfaceName) {
 			time.Sleep(1 * time.Second)
 		}
 	}
 
 	for {
-		if !isEthernetConnected("enp0s31f6") {
-			fmt.Println("Ethernet is disconnected")
+		if !isEthernetConnected(t.InterfaceName) {
 			break
 		}
 
 		time.Sleep(1 * time.Second)
 	}
 
-	fmt.Println("EthernetDisconnect fires")
-	t.action.Execute()
+	actions.Fire(t.action)
 }
 
 // func NewTimeOut(d time.Duration, action actions.Action) EthernetDisconnect {
@@ -60,16 +55,11 @@ func NewEthernetDisconnect(config internal.KillSwitchConfig) (EthernetDisconnect
 		WaitTillConnected: true,
 	}
 
-	fmt.Println(string(config.Options))
 	err := json.Unmarshal(config.Options, &result)
-
-	fmt.Println(result)
 
 	if err != nil {
 		return EthernetDisconnect{}, err
 	}
-
-	fmt.Println(result.InterfaceName)
 
 	if result.InterfaceName == "" {
 		return EthernetDisconnect{}, internal.OptionMissingError{"interfaceName"}

@@ -9,6 +9,7 @@ import (
 
 type Action interface {
 	Execute()
+	DryExecute()
 }
 
 type Stage struct {
@@ -21,7 +22,7 @@ type StagedActions struct {
 	Stages     []Stage
 }
 
-func (a StagedActions) Execute() {
+func (a StagedActions) executeInternal(f func(Action)) {
 	for idx, stage := range a.Stages {
 		if idx < a.StageCount {
 			continue
@@ -29,13 +30,32 @@ func (a StagedActions) Execute() {
 
 		fmt.Printf("Execute Stage %v\n", idx+1)
 		for actionidx, _ := range stage.Actions {
-			go stage.Actions[actionidx].Execute()
+			go f(stage.Actions[actionidx])
 		}
 
 		for range stage.Actions {
 			<-a.ActionChan
 		}
 	}
+}
+
+var TestRun bool
+
+func Fire(a Action) {
+	if TestRun {
+		a.DryExecute()
+		return
+	}
+
+	a.Execute()
+}
+
+func (a StagedActions) DryExecute() {
+	a.executeInternal(func(a Action) { a.DryExecute() })
+}
+
+func (a StagedActions) Execute() {
+	a.executeInternal(func(a Action) { a.Execute() })
 }
 
 func NewSingleAction(config internal.ActionConfig, c chan bool) (Action, error) {
@@ -45,6 +65,10 @@ func NewSingleAction(config internal.ActionConfig, c chan bool) (Action, error) 
 
 	if config.Type == "TimeOut" {
 		return NewTimeOut(config, c)
+	}
+
+	if config.Type == "Command" {
+		return NewCommand(config, c)
 	}
 
 	if config.Type == "Shutdown" {
@@ -91,6 +115,7 @@ func GetDocumenters() []internal.Documenter {
 	return []internal.Documenter{
 		Printer{},
 		TimeOut{},
+		Command{},
 		Shutdown{},
 	}
 }

@@ -13,6 +13,10 @@ type TimeOut struct {
 	ActionChan chan bool
 }
 
+func (t TimeOut) DryExecute() {
+	t.Execute()
+}
+
 func (t TimeOut) Execute() {
 	fmt.Printf("Waiting %d seconds\n", t.Duration/time.Second)
 	time.Sleep(t.Duration)
