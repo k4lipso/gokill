@@ -19,10 +19,10 @@ type ActionConfig struct {
 }
 
 type KillSwitchConfig struct {
-	Name    string         `json:"name"`
-	Type    string         `json:"type"`
-	Options Options        `json:"options"`
-	Actions []ActionConfig `json:"actions"`
+	Name    string          `json:"name"`
+	Type    string          `json:"type"`
+	Options json.RawMessage `json:"options"`
+	Actions []ActionConfig  `json:"actions"`
 }
 
 type ConfigOption struct {

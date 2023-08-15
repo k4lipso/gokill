@@ -1,6 +1,7 @@
 package triggers
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -20,14 +21,12 @@ func (t TimeOut) Listen() {
 	t.action.Execute()
 }
 
-// func NewTimeOut(d time.Duration, action actions.Action) TimeOut {
 func NewTimeOut(config internal.KillSwitchConfig) (TimeOut, error) {
-	opts := config.Options
+	result := TimeOut{d: 0 * time.Second}
+	err := json.Unmarshal(config.Options, &result)
 
-	duration, ok := opts["duration"]
-
-	if !ok {
-		return TimeOut{}, internal.OptionMissingError{"duration"}
+	if err != nil {
+		return TimeOut{}, err
 	}
 
 	action, err := actions.NewAction(config.Actions)
@@ -36,7 +35,8 @@ func NewTimeOut(config internal.KillSwitchConfig) (TimeOut, error) {
 		return TimeOut{}, err
 	}
 
-	return TimeOut{time.Duration(duration.(float64)) * time.Second, action}, nil
+	result.action = action
+	return result, nil
 }
 
 func (p TimeOut) GetName() string {
