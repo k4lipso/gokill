@@ -55,10 +55,6 @@ func NewSingleAction(config internal.ActionConfig, c chan bool) (Action, error) 
 }
 
 func NewAction(config []internal.ActionConfig) (Action, error) {
-	if len(config) == 1 {
-		return NewSingleAction(config[0], make(chan bool))
-	}
-
 	sort.Slice(config, func(i, j int) bool {
 		return config[i].Stage < config[j].Stage
 	})
@@ -89,7 +85,6 @@ func NewAction(config []internal.ActionConfig) (Action, error) {
 	}
 
 	return stagedActions, nil
-	//return Action{}, fmt.Errorf("Error parsing config: Action with type %s does not exists", config.Type)
 }
 
 func GetDocumenters() []internal.Documenter {
