@@ -14,25 +14,24 @@ import (
 func GetDocumentation() string {
 	actions := actions.GetDocumenters()
 
-	result := "Available Actions:\n\n"
-	lineBreak := "----------------------------"
+	var result string
 
 	writeOptions := func(documenters []internal.Documenter) {
 		for _, act := range documenters {
-			result += lineBreak
-			result += fmt.Sprintf("\nName: %v\nDescription: %v\nValues:\n", act.GetName(), act.GetDescription())
+			result += fmt.Sprintf("\n### %v\nDescription: %v  \nValues:\n", act.GetName(), act.GetDescription())
 
 			for _, opt := range act.GetOptions() {
-				result += fmt.Sprintf("\tName: %v\n\tType: %v\n\tDescr: %v\n\tDefault: %v\n",
+				result += fmt.Sprintf("- Name: %v\n\t- Type: %v\n\t- Descr: %v\n\t- Default: %v\n",
 					opt.Name, opt.Type, opt.Description, opt.Default)
-				result += lineBreak + "\n\n"
+				result += "\n\n"
 			}
 		}
 	}
 
-	writeOptions(actions)
-	result += "\n\nAvailable Triggers:\n\n"
+	result = "# Available Triggers:\n\n"
 	writeOptions(triggers.GetDocumenters())
+	result += "\n\n# Available Actions:\n\n"
+	writeOptions(actions)
 
 	return result
 }
