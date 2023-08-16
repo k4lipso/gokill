@@ -63,7 +63,7 @@ func NewSingleAction(config internal.ActionConfig, c chan bool) (Action, error) 
 		return NewPrint(config, c)
 	}
 
-	if config.Type == "TimeOut" {
+	if config.Type == "Timeout" {
 		return NewTimeOut(config, c)
 	}
 

@@ -41,7 +41,7 @@ func NewTimeOut(config internal.KillSwitchConfig) (TimeOut, error) {
 }
 
 func (p TimeOut) GetName() string {
-	return "TimeOut"
+	return "Timeout"
 }
 
 func (p TimeOut) GetDescription() string {

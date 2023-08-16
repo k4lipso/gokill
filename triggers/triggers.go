@@ -11,7 +11,7 @@ type Trigger interface {
 }
 
 func NewTrigger(config internal.KillSwitchConfig) (Trigger, error) {
-	if config.Type == "TimeOut" {
+	if config.Type == "Timeout" {
 		return NewTimeOut(config)
 	}
 

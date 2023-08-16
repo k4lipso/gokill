@@ -36,7 +36,7 @@ func NewTimeOut(config internal.ActionConfig, c chan bool) (Action, error) {
 }
 
 func (p TimeOut) GetName() string {
-	return "TimeOut"
+	return "Timeout"
 }
 
 func (p TimeOut) GetDescription() string {
