@@ -6,8 +6,6 @@ import (
 	"unknown.com/gokill/internal"
 )
 
-// TestHelloName calls greetings.Hello with a name, checking
-// for a valid return value.
 func TestEthernetDisconnetConfig(t *testing.T) {
 	type EthernetTest struct {
 		testConfig     internal.KillSwitchConfig

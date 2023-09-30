@@ -49,7 +49,6 @@ func (t EthernetDisconnect) Listen() {
 	actions.Fire(t.action)
 }
 
-// func NewTimeOut(d time.Duration, action actions.Action) EthernetDisconnect {
 func NewEthernetDisconnect(config internal.KillSwitchConfig) (EthernetDisconnect, error) {
 	result := EthernetDisconnect{
 		WaitTillConnected: true,

@@ -21,7 +21,7 @@ func GetDocumentation() string {
 			result += fmt.Sprintf("\n### %v\nDescription: %v  \nValues:\n", act.GetName(), act.GetDescription())
 
 			for _, opt := range act.GetOptions() {
-				result += fmt.Sprintf("- Name: %v\n\t- Type: %v\n\t- Descr: %v\n\t- Default: %v\n",
+				result += fmt.Sprintf("- Name: **%v**\n\t- Type: %v\n\t- Descr: %v\n\t- Default: %v\n",
 					opt.Name, opt.Type, opt.Description, opt.Default)
 				result += "\n\n"
 			}
