@@ -11,24 +11,24 @@ type Shutdown struct {
 	ActionChan chan bool
 }
 
-func (c Shutdown) DryExecute() {
+func (s Shutdown) DryExecute() {
 	fmt.Println("Test Shutdown executed...")
 
-	c.ActionChan <- true
+	s.ActionChan <- true
 
 }
 
-func (c Shutdown) Execute() {
+func (s Shutdown) Execute() {
 	if err := exec.Command("shutdown", "-h", "now").Run(); err != nil {
 		fmt.Println("Failed to initiate shutdown:", err)
 	}
 
 	fmt.Println("Shutdown executed...")
 
-	c.ActionChan <- true
+	s.ActionChan <- true
 }
 
-func NewShutdown(config internal.ActionConfig, c chan bool) (Action, error) {
+func (s Shutdown) Create(config internal.ActionConfig, c chan bool) (Action, error) {
 	return Shutdown{c}, nil
 }
 

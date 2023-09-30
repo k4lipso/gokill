@@ -22,7 +22,7 @@ func (p Printer) DryExecute() {
 	p.ActionChan <- true
 }
 
-func NewPrint(config internal.ActionConfig, c chan bool) (Action, error) {
+func (p Printer) Create(config internal.ActionConfig, c chan bool) (Action, error) {
 	var result Printer
 	err := json.Unmarshal(config.Options, &result)
 

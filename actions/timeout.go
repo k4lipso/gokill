@@ -23,7 +23,7 @@ func (t TimeOut) Execute() {
 	t.ActionChan <- true
 }
 
-func NewTimeOut(config internal.ActionConfig, c chan bool) (Action, error) {
+func (t TimeOut) Create(config internal.ActionConfig, c chan bool) (Action, error) {
 	var result TimeOut
 	err := json.Unmarshal(config.Options, &result)
 

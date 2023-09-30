@@ -22,7 +22,7 @@ func (t TimeOut) Listen() {
 	actions.Fire(t.action)
 }
 
-func NewTimeOut(config internal.KillSwitchConfig) (TimeOut, error) {
+func (t TimeOut) Create(config internal.KillSwitchConfig) (Trigger, error) {
 	var result TimeOut
 	err := json.Unmarshal(config.Options, &result)
 

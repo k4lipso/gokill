@@ -10,6 +10,12 @@ import (
 type Action interface {
 	Execute()
 	DryExecute()
+	Create(internal.ActionConfig, chan bool) (Action, error)
+}
+
+type DocumentedAction interface {
+	Action
+	internal.Documenter
 }
 
 type Stage struct {
@@ -58,21 +64,15 @@ func (a StagedActions) Execute() {
 	a.executeInternal(func(a Action) { a.Execute() })
 }
 
+func (a StagedActions) Create(config internal.ActionConfig, c chan bool) (Action, error) {
+	return StagedActions{}, nil
+}
+
 func NewSingleAction(config internal.ActionConfig, c chan bool) (Action, error) {
-	if config.Type == "Print" {
-		return NewPrint(config, c)
-	}
-
-	if config.Type == "Timeout" {
-		return NewTimeOut(config, c)
-	}
-
-	if config.Type == "Command" {
-		return NewCommand(config, c)
-	}
-
-	if config.Type == "Shutdown" {
-		return NewShutdown(config, c)
+	for _, availableAction := range GetAllActions() {
+		if config.Type == availableAction.GetName() {
+			return availableAction.Create(config, c)
+		}
 	}
 
 	return nil, fmt.Errorf("Error parsing config: Action with type %s does not exists", config.Type)
@@ -111,11 +111,21 @@ func NewAction(config []internal.ActionConfig) (Action, error) {
 	return stagedActions, nil
 }
 
-func GetDocumenters() []internal.Documenter {
-	return []internal.Documenter{
+func GetAllActions() []DocumentedAction {
+	return []DocumentedAction{
 		Printer{},
 		TimeOut{},
 		Command{},
 		Shutdown{},
 	}
+}
+
+func GetDocumenters() []internal.Documenter {
+	var result []internal.Documenter
+
+	for _, action := range GetAllActions() {
+		result = append(result, action)
+	}
+
+	return result
 }
