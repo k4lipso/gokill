@@ -18,8 +18,8 @@ func (t TimeOut) DryExecute() {
 }
 
 func (t TimeOut) Execute() {
-	fmt.Printf("Waiting %d seconds\n", t.Duration/time.Second)
-	time.Sleep(t.Duration)
+	fmt.Printf("Waiting %d seconds\n", t.Duration)
+	time.Sleep(time.Duration(t.Duration) * time.Second)
 	t.ActionChan <- true
 }
 
@@ -45,6 +45,6 @@ func (p TimeOut) GetDescription() string {
 
 func (p TimeOut) GetOptions() []internal.ConfigOption {
 	return []internal.ConfigOption{
-		{"duration", "string", "duration in seconds", "0"},
+		{"duration", "int", "duration in seconds", "0"},
 	}
 }

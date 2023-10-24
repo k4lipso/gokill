@@ -50,6 +50,6 @@ func (p TimeOut) GetDescription() string {
 
 func (p TimeOut) GetOptions() []internal.ConfigOption {
 	return []internal.ConfigOption{
-		{"duration", "string", "duration in seconds", "0"},
+		{"duration", "int", "duration in seconds", "0"},
 	}
 }
