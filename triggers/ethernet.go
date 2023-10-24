@@ -49,7 +49,7 @@ func (t EthernetDisconnect) Listen() {
 	actions.Fire(t.action)
 }
 
-func (e EthernetDisconnect) Create(config internal.KillSwitchConfig) (Trigger, error) {
+func CreateEthernetDisconnect(config internal.KillSwitchConfig) (EthernetDisconnect, error) {
 	result := EthernetDisconnect{
 		WaitTillConnected: true,
 	}
@@ -73,6 +73,10 @@ func (e EthernetDisconnect) Create(config internal.KillSwitchConfig) (Trigger, e
 	result.action = action
 
 	return result, nil
+}
+
+func (e EthernetDisconnect) Create(config internal.KillSwitchConfig) (Trigger, error) {
+	return CreateEthernetDisconnect(config)
 }
 
 func (p EthernetDisconnect) GetName() string {

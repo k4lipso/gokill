@@ -24,7 +24,7 @@ func TestEthernetDisconnetConfig(t *testing.T) {
 		},
 		EthernetTest{
 			testConfig: internal.KillSwitchConfig{
-				Options: []byte(`{ 
+				Options: []byte(`{
 					"waitTillConnected": false
 				}`),
 			},
@@ -34,7 +34,7 @@ func TestEthernetDisconnetConfig(t *testing.T) {
 		},
 		EthernetTest{
 			testConfig: internal.KillSwitchConfig{
-				Options: []byte(`{ 
+				Options: []byte(`{
 					"interfaceName": "eth0",
 					"waitTillConnected": false
 				}`),
@@ -45,7 +45,7 @@ func TestEthernetDisconnetConfig(t *testing.T) {
 		},
 		EthernetTest{
 			testConfig: internal.KillSwitchConfig{
-				Options: []byte(`{ 
+				Options: []byte(`{
 					"interfaceName": "eth0",
 					"waitTillConnected": true
 				}`),
@@ -65,7 +65,7 @@ func TestEthernetDisconnetConfig(t *testing.T) {
 	}
 
 	for _, testConfig := range testConfigs {
-		result, err := NewEthernetDisconnect(testConfig.testConfig)
+		result, err := CreateEthernetDisconnect(testConfig.testConfig)
 
 		if err != testConfig.expectedError {
 			t.Errorf("Error was incorrect, got: %s, want: %s.", err, testConfig.expectedError)
