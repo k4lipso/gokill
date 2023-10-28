@@ -35,7 +35,7 @@ func (t UsbDisconnect) Listen() {
 			time.Sleep(1 * time.Second)
 		}
 
-		fmt.Sprintln("Device %s detected.", t.DeviceName)
+		fmt.Printf("Device %s detected.\n", t.DeviceName)
 		fmt.Println("UsbDisconnect Trigger is Armed")
 	}
 
