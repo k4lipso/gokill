@@ -1,3 +1,5 @@
+*.gcow2
+result
 example.json
 go.sum
 go.mod
