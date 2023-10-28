@@ -13,12 +13,12 @@ type Printer struct {
 }
 
 func (p Printer) Execute() {
-	fmt.Printf("Print action fires. Message: %s", p.Message)
+	fmt.Printf("Print action fires. Message: %s\n", p.Message)
 	p.ActionChan <- true
 }
 
 func (p Printer) DryExecute() {
-	fmt.Printf("Print action fire test. Message: %s", p.Message)
+	fmt.Printf("Print action fire test. Message: %s\n", p.Message)
 	p.ActionChan <- true
 }
 
