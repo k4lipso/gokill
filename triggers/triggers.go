@@ -30,6 +30,7 @@ func GetAllTriggers() []DocumentedTrigger {
 	return []DocumentedTrigger{
 		TimeOut{},
 		EthernetDisconnect{},
+		UsbDisconnect{},
 	}
 }
 
