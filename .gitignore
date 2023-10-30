@@ -1,4 +1,5 @@
 *.qcow2
+.envrc
 result
 example.json
 go.sum
