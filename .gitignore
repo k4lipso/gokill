@@ -1,4 +1,4 @@
-*.gcow2
+*.qcow2
 result
 example.json
 go.sum
