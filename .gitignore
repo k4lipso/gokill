@@ -4,6 +4,6 @@ result
 example.json
 go.sum
 go.mod
-gokill
+./gokill
 output.md
 thoughts.md
