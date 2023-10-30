@@ -11,12 +11,12 @@ import (
 
 type Command struct {
 	Command    string   `json:"command"`
-	ActionChan chan bool
+	ActionChan ActionResultChan
 }
 
 func (c Command) DryExecute() {
 	fmt.Printf("Test Executing Command:\n%s ", c.Command)
-	c.ActionChan <- true
+	c.ActionChan <- nil
 }
 
 func (c Command) splitCommandString() (string, []string, error) {
@@ -38,8 +38,7 @@ func (c Command) Execute() {
 	fmt.Println("Executing command: ", c.Command)
 
 	if err != nil {
-		fmt.Println(err)
-		c.ActionChan <- false
+		c.ActionChan <- err
 		return
 	}
 
@@ -53,10 +52,10 @@ func (c Command) Execute() {
 
 	fmt.Println(string(stdout[:]))
 
-	c.ActionChan <- true
+	c.ActionChan <- nil
 }
 
-func CreateCommand(config internal.ActionConfig, c chan bool) (Command, error) {
+func CreateCommand(config internal.ActionConfig, c ActionResultChan) (Command, error) {
 	result := Command{}
 
 	err := json.Unmarshal(config.Options, &result)
@@ -74,7 +73,7 @@ func CreateCommand(config internal.ActionConfig, c chan bool) (Command, error) {
 	return result, nil
 }
 
-func (cc Command) Create(config internal.ActionConfig, c chan bool) (Action, error) {
+func (cc Command) Create(config internal.ActionConfig, c ActionResultChan) (Action, error) {
 	return CreateCommand(config, c)
 }
 

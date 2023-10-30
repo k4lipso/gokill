@@ -8,13 +8,13 @@ import (
 )
 
 type Shutdown struct {
-	ActionChan chan bool
+	ActionChan ActionResultChan
 }
 
 func (s Shutdown) DryExecute() {
 	fmt.Println("Test Shutdown executed...")
 
-	s.ActionChan <- true
+	s.ActionChan <- nil
 
 }
 
@@ -25,10 +25,10 @@ func (s Shutdown) Execute() {
 
 	fmt.Println("Shutdown executed...")
 
-	s.ActionChan <- true
+	s.ActionChan <- nil
 }
 
-func (s Shutdown) Create(config internal.ActionConfig, c chan bool) (Action, error) {
+func (s Shutdown) Create(config internal.ActionConfig, c ActionResultChan) (Action, error) {
 	return Shutdown{c}, nil
 }
 

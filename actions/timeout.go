@@ -10,7 +10,7 @@ import (
 
 type TimeOut struct {
 	Duration   time.Duration
-	ActionChan chan bool
+	ActionChan ActionResultChan
 }
 
 func (t TimeOut) DryExecute() {
@@ -20,10 +20,10 @@ func (t TimeOut) DryExecute() {
 func (t TimeOut) Execute() {
 	fmt.Printf("Waiting %d seconds\n", t.Duration)
 	time.Sleep(time.Duration(t.Duration) * time.Second)
-	t.ActionChan <- true
+	t.ActionChan <- nil
 }
 
-func (t TimeOut) Create(config internal.ActionConfig, c chan bool) (Action, error) {
+func (t TimeOut) Create(config internal.ActionConfig, c ActionResultChan) (Action, error) {
 	var result TimeOut
 	err := json.Unmarshal(config.Options, &result)
 

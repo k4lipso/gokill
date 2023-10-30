@@ -9,20 +9,20 @@ import (
 
 type Printer struct {
 	Message    string
-	ActionChan chan bool
+	ActionChan ActionResultChan
 }
 
 func (p Printer) Execute() {
 	fmt.Printf("Print action fires. Message: %s\n", p.Message)
-	p.ActionChan <- true
+	p.ActionChan <- nil
 }
 
 func (p Printer) DryExecute() {
 	fmt.Printf("Print action fire test. Message: %s\n", p.Message)
-	p.ActionChan <- true
+	p.ActionChan <- nil
 }
 
-func (p Printer) Create(config internal.ActionConfig, c chan bool) (Action, error) {
+func (p Printer) Create(config internal.ActionConfig, c ActionResultChan) (Action, error) {
 	var result Printer
 	err := json.Unmarshal(config.Options, &result)
 
@@ -44,6 +44,11 @@ func (p Printer) GetDescription() string {
 
 func (p Printer) GetOptions() []internal.ConfigOption {
 	return []internal.ConfigOption{
-		{"message", "string", "Message that should be printed", "\"\""},
+		{
+			Name: "message", 
+			Type: "string", 
+			Description: "Message that should be printed", 
+			Default: "\"\"",
+		},
 	}
 }
