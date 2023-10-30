@@ -1,5 +1,5 @@
 # gokill
-'gokill' is a daemon that completes some actions when a certain event occurs.
+'gokill' is a tool that completes some actions when a certain event occurs.
 actions can vary from shuting down the machine to sending mails over erasing data.
 actions can be triggert by certain conditions like specific outcomes of unix
 comands or not having internet connection.
@@ -10,55 +10,19 @@ every action and trigger should be testable at anytime as a 'dry-run'.
 actions can have a 'stage' defined. the lowest stage is started first,
 and only when all actions on that stage are finished next stage is triggered
 
-the killswitch will run as daemon. config should be read from
-/etc/somename/config.json
+gokill should run as daemon. config should be read from /etc/somename/config.json
 
-many devices can be connected to each other over ipfs. that makes it possible
-to send triggers to each other. for example device A can trigger an event on
-device B. no matter where they are, no zentralized service necessary.
-
-it should be evaluated if and how smartphones could be included to that.
-
-## actions
-- [x]shutdown
-- [ ] wipe ram
-- [ ]send mail
-- [ ]delete data
-- [ ]shred area
-- [x]random command
-- [ ]wordpress post
-- [ ]ipfs command
-- [ ] [buskill 'triggers'](https://github.com/BusKill/awesome-buskill-triggers)
-    - [x] [lock-screen](https://github.com/BusKill/buskill-linux/tree/master/triggers)
-    - [x] shutdown
-    - [ ] luks header shredder
-    - [ ] veracrypt self-destruct
-
-## Triggers
-- [ ] no internet
-- [x] [pull usb stick](https://github.com/deepakjois/gousbdrivedetector/blob/master/usbdrivedetector_linux.go)
-- [x] ethernet unplugged
-- [ ] power adapter disconnected
-- [ ] unix command
-- anyOf
-    - trigger wrapper containing many triggers and fires as soon as one of them
-      is triggered
-- allOf
-- [ ] ipfs trigger
-
-## Config
-
-##### Example
+## Config Example
 ``` json
 [ //list of triggers
     {
-        "type": "command", //actual trigger
-        "name": "custom name",
-        "options": {
-            "command": "true",
-            "interval": "1m"
-        },
-        "actions": [
+		"type": "UsbDisconnect",
+		"name": "First Trigger",
+		"options": {
+			"deviceId": "ata-Samsung_SSD_860_EVO_1TB_S4AALKWJDI102",
+			"waitTillConnected": true //only trigger when usb drive was actually attached before
+		}
+        "actions": [ //list of actions that will be executed when triggered
             {
                 "name": "unixCommand",
                 "options": {
@@ -79,6 +43,48 @@ it should be evaluated if and how smartphones could be included to that.
                 "stage": 1 //this event is triggered first, then the shutdown
             },
         ]
+    },
+    {
+		"type": "EthernetDisconnect",
+		"name": "Second Trigger",
+		"options": {
+			"interfaceName": "eth0",
+		}
+        "actions": [
+            {
+                "name": "unixCommand",
+                "options": {
+                    "command": "env DISPLAY=:0 sudo su -c i3lock someUser"
+                }
+            }
+        ]
     }
 ]
 ```
+
+## actions
+- [x] shutdown
+- [ ] wipe ram
+- [ ] send mail
+- [ ] delete data
+- [ ] shred area
+- [x] random command
+- [ ] wordpress post
+- [ ] ipfs command
+- [ ] [buskill 'triggers'](https://github.com/BusKill/awesome-buskill-triggers)
+    - [x] [lock-screen](https://github.com/BusKill/buskill-linux/tree/master/triggers)
+    - [x] shutdown
+    - [ ] luks header shredder
+    - [ ] veracrypt self-destruct
+
+## Triggers
+- [ ] no internet
+- [x] [pull usb stick](https://github.com/deepakjois/gousbdrivedetector/blob/master/usbdrivedetector_linux.go)
+- [x] ethernet unplugged
+- [ ] power adapter disconnected
+- [ ] unix command
+- anyOf
+    - trigger wrapper containing many triggers and fires as soon as one of them
+      is triggered
+- allOf
+- [ ] ipfs trigger
