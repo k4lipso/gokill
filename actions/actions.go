@@ -7,10 +7,12 @@ import (
 	"unknown.com/gokill/internal"
 )
 
+type ActionResultChan chan error
+
 type Action interface {
 	Execute()
 	DryExecute()
-	Create(internal.ActionConfig, chan bool) (Action, error)
+	Create(internal.ActionConfig, ActionResultChan) (Action, error)
 }
 
 type DocumentedAction interface {
@@ -23,7 +25,7 @@ type Stage struct {
 }
 
 type StagedActions struct {
-	ActionChan chan bool
+	ActionChan ActionResultChan
 	StageCount int
 	Stages     []Stage
 }
@@ -40,7 +42,11 @@ func (a StagedActions) executeInternal(f func(Action)) {
 		}
 
 		for range stage.Actions {
-			<-a.ActionChan
+			err := <-a.ActionChan
+
+			if err != nil {
+				fmt.Printf("Error occured on Stage %d: %s", idx+1, err)
+			}
 		}
 	}
 }
@@ -64,11 +70,11 @@ func (a StagedActions) Execute() {
 	a.executeInternal(func(a Action) { a.Execute() })
 }
 
-func (a StagedActions) Create(config internal.ActionConfig, c chan bool) (Action, error) {
+func (a StagedActions) Create(config internal.ActionConfig, c ActionResultChan) (Action, error) {
 	return StagedActions{}, nil
 }
 
-func NewSingleAction(config internal.ActionConfig, c chan bool) (Action, error) {
+func NewSingleAction(config internal.ActionConfig, c ActionResultChan) (Action, error) {
 	for _, availableAction := range GetAllActions() {
 		if config.Type == availableAction.GetName() {
 			return availableAction.Create(config, c)
@@ -83,7 +89,7 @@ func NewAction(config []internal.ActionConfig) (Action, error) {
 		return config[i].Stage < config[j].Stage
 	})
 
-	stagedActions := StagedActions{make(chan bool), 0, []Stage{}}
+	stagedActions := StagedActions{make(ActionResultChan), 0, []Stage{}}
 
 	stageMap := make(map[int][]Action)
 
