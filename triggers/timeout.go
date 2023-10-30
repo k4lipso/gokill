@@ -1,5 +1,4 @@
 package triggers
-
 import (
 	"encoding/json"
 	"fmt"
@@ -45,7 +44,21 @@ func (p TimeOut) GetName() string {
 }
 
 func (p TimeOut) GetDescription() string {
-	return "Triggers after given duration."
+	return "Triggers after given duration. Mostly used for debugging."
+}
+
+func (p TimeOut) GetExample() string {
+	return `
+	{
+		"type": "Timeout",
+		"name": "Example Trigger",
+		"options": {
+			"duration": 5
+		}
+		"actions": [
+		]
+	}
+	`
 }
 
 func (p TimeOut) GetOptions() []internal.ConfigOption {

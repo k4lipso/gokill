@@ -36,5 +36,6 @@ type ConfigOption struct {
 type Documenter interface {
 	GetName() string
 	GetDescription() string
+	GetExample() string
 	GetOptions() []ConfigOption
 }

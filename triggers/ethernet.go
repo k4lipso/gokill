@@ -87,6 +87,21 @@ func (p EthernetDisconnect) GetDescription() string {
 	return "Triggers if Ethernetcable is disconnected."
 }
 
+func (p EthernetDisconnect) GetExample() string {
+	return `
+	{
+		"type": "EthernetDisconnect",
+		"name": "Example Trigger",
+		"options": {
+			"interfaceName": "eth0",
+			"waitTillConnected": true
+		}
+		"actions": [
+		]
+	}
+	`
+}
+
 func (p EthernetDisconnect) GetOptions() []internal.ConfigOption {
 	return []internal.ConfigOption{
 		{"waitTillConnected", "bool", "Only trigger when device was connected before", "true"},
