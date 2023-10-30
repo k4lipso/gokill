@@ -13,12 +13,11 @@ import (
 
 func getMarkdown(documenter internal.Documenter) string {
 	var result string
-	result += fmt.Sprintf("# %v\n**%v**\n\nValues:\n", documenter.GetName(), documenter.GetDescription())
+	result += fmt.Sprintf("# %v\n%v\n## Options:\n", documenter.GetName(), documenter.GetDescription())
 	
 	for _, opt := range documenter.GetOptions() {
-		result += fmt.Sprintf("- Name: **%v**\n\t- Type: %v\n\t- Descr: %v\n\t- Default: %v\n",
-			opt.Name, opt.Type, opt.Description, opt.Default)
-		result += "\n\n"
+		result += fmt.Sprintf("### %v\n%v  \n\n*Type:* %v  \n\n*Default:* ```%v```  \n",
+			opt.Name, opt.Description, opt.Type, opt.Default)
 	}
 
 	return result
