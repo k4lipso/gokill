@@ -7,8 +7,17 @@
   outputs = { self, nixpkgs, ... }: 
   let
     forAllSystems = nixpkgs.lib.genAttrs [ "x86_64-linux" ];
+    pkgs = nixpkgs.legacyPackages."x86_64-linux";
   in
   {
+    devShell."x86_64-linux" = pkgs.mkShell {
+      packages = with pkgs; [
+        go
+        gotools
+        mdbook
+      ];
+    };
+
     packages.x86_64-linux.gokill = nixpkgs.legacyPackages.x86_64-linux.buildGoModule rec {
       pname = "gokill";
       version = "1.0";
