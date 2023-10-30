@@ -7,6 +7,7 @@ let
   prepareMD = ''
     # Copy inputs into the build directory
     cp -r --no-preserve=all $inputs/* ./
+    cp ${../README.md} ./README.md
 
     ${docbuilder}/bin/docbuilder --output ./
     substituteInPlace ./SUMMARY.md \
