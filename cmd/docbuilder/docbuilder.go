@@ -1,0 +1,95 @@
+package main
+
+import (
+	"fmt"
+	"strings"
+	"os"
+	"flag"
+
+	"unknown.com/gokill/actions"
+	"unknown.com/gokill/triggers"
+	"unknown.com/gokill/internal"
+)
+
+func getMarkdown(documenter internal.Documenter) string {
+	var result string
+	result += fmt.Sprintf("# %v\n**%v**\n\nValues:\n", documenter.GetName(), documenter.GetDescription())
+	
+	for _, opt := range documenter.GetOptions() {
+		result += fmt.Sprintf("- Name: **%v**\n\t- Type: %v\n\t- Descr: %v\n\t- Default: %v\n",
+			opt.Name, opt.Type, opt.Description, opt.Default)
+		result += "\n\n"
+	}
+
+	return result
+}
+
+func writeToFile(path string, documenter internal.Documenter) error {
+	fileName := fmt.Sprintf("%s/%s.md", path, documenter.GetName())
+
+	f, err := os.Create(fileName)
+
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+
+	defer f.Close()
+
+	_, err = f.WriteString(getMarkdown(documenter))
+
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+
+	return nil
+}
+
+func writeDocumentersToFiles(destination string) {
+	writeFolder := func(typeName string, documenters []internal.Documenter) {
+		path := fmt.Sprintf("%s/%s", destination, typeName)
+		_ = os.Mkdir(path, os.ModePerm)
+		for _, documenter := range documenters {
+			writeToFile(path, documenter)
+		}
+	}
+
+	actions := actions.GetDocumenters()
+	writeFolder("actions", actions)
+
+	triggers := triggers.GetDocumenters()
+	writeFolder("triggers", triggers)
+}
+
+func printDocumentersSummary() {
+	result := fmt.Sprintf("- [Triggers](triggers/README.md)\n")
+	for _, trigger := range triggers.GetDocumenters() {
+		result += fmt.Sprintf("\t- [%s](triggers/%s.md)\n", trigger.GetName(), trigger.GetName())
+	}
+
+	result += fmt.Sprintf("- [Actions](actions/README.md)\n")
+	for _, action := range actions.GetDocumenters() {
+		result += fmt.Sprintf("\t- [%s](actions/%s.md)\n", action.GetName(), action.GetName())
+	}
+
+	fmt.Print(result)
+}
+
+
+func main() {
+	outputPath := flag.String("output", "", "path where docs/ shoud be created")
+
+	flag.Parse()
+
+	if *outputPath == "" {
+		printDocumentersSummary()
+		return
+	}
+
+	if len(*outputPath) > 1 {
+		*outputPath = strings.TrimSuffix(*outputPath, "/")
+	}
+
+	writeDocumentersToFiles(*outputPath)
+}

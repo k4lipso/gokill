@@ -28,6 +28,20 @@
         '';
     };
 
+    packages.x86_64-linux.gokill-docbuilder = nixpkgs.legacyPackages.x86_64-linux.buildGoModule rec {
+      pname = "docbuilder";
+      version = "1.0";
+      vendorHash = null;
+      buildFLags = "-o . $dest/cmd/gokill/docbuilder";
+      src = ./.;
+
+      postInstall = ''
+        '';
+    };
+
+
+    packages.x86_64-linux.docs = pkgs.callPackage (import ./docs/default.nix) { self = self; };
+
     packages.x86_64-linux.default = self.packages.x86_64-linux.gokill;
 
     nixosModules.gokill = { config, lib, pkgs, ... }: 
@@ -139,6 +153,12 @@
       program = builtins.toString (nixpkgs.legacyPackages."x86_64-linux".writeScript "vm" ''
         ${self.packages."x86_64-linux".testVm}/bin/run-nixos-vm
       '');
+    };
+
+    apps.x86_64-linux.docs = {
+      type = "app";
+      program = builtins.toString (nixpkgs.legacyPackages."x86_64-linux".writeScript "docs" ''
+        ${pkgs.python3}/bin/python3 -m http.server --directory ${self.packages."x86_64-linux".docs}/share/doc'');
     };
   };
 }
