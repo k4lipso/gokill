@@ -4,28 +4,46 @@ import (
 	"encoding/json"
 	"fmt"
 	"os/exec"
+	"strings"
 
 	"unknown.com/gokill/internal"
 )
 
 type Command struct {
 	Command    string   `json:"command"`
-	Args       []string `json:"args"`
 	ActionChan chan bool
 }
 
 func (c Command) DryExecute() {
 	fmt.Printf("Test Executing Command:\n%s ", c.Command)
-	for _, arg := range c.Args {
-		fmt.Printf("%s ", arg)
-	}
-
-	fmt.Println("")
 	c.ActionChan <- true
 }
 
+func (c Command) splitCommandString() (string, []string, error) {
+	splitted := strings.Fields(c.Command)
+
+	if len(splitted) == 0 {
+		return "", nil, fmt.Errorf("Command is empty")
+	}
+
+	if len(splitted) == 1 {
+		return splitted[0], []string(nil), nil
+	}
+
+	return splitted[0], splitted[1:], nil
+}
+
 func (c Command) Execute() {
-	cmd := exec.Command(c.Command, c.Args...)
+	command, args, err := c.splitCommandString()
+	fmt.Println("Executing command: ", c.Command)
+
+	if err != nil {
+		fmt.Println(err)
+		c.ActionChan <- false
+		return
+	}
+
+	cmd := exec.Command(command, args...)
 
 	stdout, err := cmd.Output()
 
@@ -71,6 +89,5 @@ func (p Command) GetDescription() string {
 func (p Command) GetOptions() []internal.ConfigOption {
 	return []internal.ConfigOption{
 		{"command", "string", "command to execute", ""},
-		{"args", "string[]", "args", ""},
 	}
 }
