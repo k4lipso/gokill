@@ -1,4 +1,4 @@
 # Summary
 
-- [Introduction](./gokill.md)
+- [gokill](./README.md)
 @GOKILL_OPTIONS@
