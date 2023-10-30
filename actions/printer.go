@@ -39,7 +39,21 @@ func (p Printer) GetName() string {
 }
 
 func (p Printer) GetDescription() string {
-	return "When triggered prints the configured message to stdout"
+	return `
+Prints a given message to stdout.
+This action is mostly used for debugging purposes.
+	`
+}
+
+func (p Printer) GetExample() string {
+	return `
+		{
+			type: "Print",
+			"options: {
+				"message": "Hello World!"
+			}
+		}
+	`
 }
 
 func (p Printer) GetOptions() []internal.ConfigOption {

@@ -37,7 +37,15 @@ func (p Shutdown) GetName() string {
 }
 
 func (p Shutdown) GetDescription() string {
-	return "When triggered shuts down the machine"
+	return "Shutsdown the machine by perfoming a ```shutdown -h now```"
+}
+
+func (p Shutdown) GetExample() string {
+	return `
+	{
+		"type": "Shutdown",
+	}
+	`
 }
 
 func (p Shutdown) GetOptions() []internal.ConfigOption {

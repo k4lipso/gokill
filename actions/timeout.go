@@ -40,7 +40,21 @@ func (p TimeOut) GetName() string {
 }
 
 func (p TimeOut) GetDescription() string {
-	return "When triggered waits given duration before continuing with next stage"
+	return `
+Waits given duration in seconds.
+This can be used to wait a certain amount of time before continuing to the next Stage
+	`
+}
+
+func (p TimeOut) GetExample() string {
+	return `
+	{
+		"type": "Timeout",
+		"options": {
+			"duration": 5
+		}
+	}
+	`
 }
 
 func (p TimeOut) GetOptions() []internal.ConfigOption {

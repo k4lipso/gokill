@@ -82,7 +82,18 @@ func (p Command) GetName() string {
 }
 
 func (p Command) GetDescription() string {
-	return "When triggered executes given command"
+	return "Invoces given command using exec."
+}
+
+func (p Command) GetExample() string {
+	return `
+	{
+		"type": "Command",
+		"options": {
+			"command": "srm /path/to/file"
+		}
+	}
+	`
 }
 
 func (p Command) GetOptions() []internal.ConfigOption {

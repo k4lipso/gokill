@@ -88,6 +88,22 @@ func (p UsbDisconnect) GetDescription() string {
 	return "Triggers when given usb drive is disconnected"
 }
 
+func (p UsbDisconnect) GetExample() string {
+	return `
+	{
+		"type": "UsbDisconnect",
+		"name": "Example Trigger",
+		"options": {
+			"deviceId": "ata-Samsung_SSD_860_EVO_1TB_S4AALKWJDI102",
+			"waitTillConnected": true
+		}
+		"actions": [
+		]
+	}
+	`
+}
+
+
 func (p UsbDisconnect) GetOptions() []internal.ConfigOption {
 	return []internal.ConfigOption{
 		{"waitTillConnected", "bool", "Only trigger when device was connected before", "true"},
