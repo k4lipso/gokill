@@ -1,0 +1,10 @@
+[book]
+authors = []
+language = "en"
+multilingual = false
+src = "."
+title = "gokill docs"
+
+[output.html.fold]
+enable = true
+level = 0
