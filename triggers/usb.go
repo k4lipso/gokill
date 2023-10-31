@@ -85,7 +85,10 @@ func (p UsbDisconnect) GetName() string {
 }
 
 func (p UsbDisconnect) GetDescription() string {
-	return "Triggers when given usb drive is disconnected"
+	return `
+Triggers when given usb drive is disconnected.
+Currently it simply checks that the file /dev/disk/by-id/$deviceId exists.
+`
 }
 
 func (p UsbDisconnect) GetExample() string {
