@@ -17,5 +17,3 @@ Triggers have the following syntax:
   "actions": [] //list actions that should be executed here
 }
 ```
-
-To get a list of all triggers and their options from the commandline run ```gokill -d```

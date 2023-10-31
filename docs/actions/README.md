@@ -15,9 +15,7 @@ Actions have the following syntax:
   "type": "SomeAction",
   "options": { //each action defines its own options
     "firstOption": "someValue",
-    "Stage": 2 //this (positive) number defines the order of multiple actions
+    "stage": 2 //this (positive) number defines the order of multiple actions
   }
 }
 ```
-
-To get a list of all actions and their options from the commandline run ``` gokill -d ```
