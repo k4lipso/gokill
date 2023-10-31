@@ -119,11 +119,12 @@ func NewAction(config []internal.ActionConfig) (Action, error) {
 
 func GetAllActions() []DocumentedAction {
 	return []DocumentedAction{
-		Printer{},
-		TimeOut{},
 		Command{},
+		Printer{},
 		ShellScript{},
 		Shutdown{},
+		SendMatrix{},
+		TimeOut{},
 	}
 }
 

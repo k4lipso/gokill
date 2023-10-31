@@ -2,8 +2,6 @@
 .envrc
 result
 example.json
-go.sum
-go.mod
 ./gokill
 output.md
 thoughts.md

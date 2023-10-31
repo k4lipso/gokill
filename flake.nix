@@ -15,14 +15,19 @@
         go
         gotools
         mdbook
+        olm
       ];
     };
 
     packages.x86_64-linux.gokill = nixpkgs.legacyPackages.x86_64-linux.buildGoModule rec {
       pname = "gokill";
       version = "1.0";
-      vendorHash = "sha256-aKEOMeW9QVSLsSuHV4b1khqM0rRrMjJ6Eu5RjY+6V8k=";
+      vendorHash = "sha256-MVIvXxASUO33Ca34ruIz4S0QDJcW2unaG4+Zo73g/9o=";
       src = ./.;
+
+      buildInputs = [
+        pkgs.olm
+      ];
 
       postInstall = ''
         '';
@@ -31,9 +36,13 @@
     packages.x86_64-linux.gokill-docbuilder = nixpkgs.legacyPackages.x86_64-linux.buildGoModule rec {
       pname = "docbuilder";
       version = "1.0";
-      vendorHash = null;
+      vendorHash = "sha256-MVIvXxASUO33Ca34ruIz4S0QDJcW2unaG4+Zo73g/9o=";
       buildFLags = "-o . $dest/cmd/gokill/docbuilder";
       src = ./.;
+
+      buildInputs = [
+        pkgs.olm
+      ];
 
       postInstall = ''
         '';
