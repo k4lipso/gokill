@@ -30,7 +30,10 @@ func (s Shutdown) Execute() {
 }
 
 func (s Shutdown) Create(config internal.ActionConfig, c ActionResultChan) (Action, error) {
-	var result Shutdown
+	result := Shutdown{
+		Timeout: "now",
+	}
+
 	err := json.Unmarshal(config.Options, &result)
 
 	if err != nil {
