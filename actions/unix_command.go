@@ -14,8 +14,33 @@ type Command struct {
 	ActionChan ActionResultChan
 }
 
+func isCommandAvailable(name string) bool {
+  cmd := exec.Command("/bin/sh", "-c", "command -v "+name)
+  if err := cmd.Run(); err != nil {
+		return false
+  }
+
+  return true
+}
+
 func (c Command) DryExecute() {
-	fmt.Printf("Test Executing Command:\n%s ", c.Command)
+	fmt.Printf("Test Executing Command:\n%s\n", c.Command)
+	command, _, err := c.splitCommandString()
+
+	if err != nil {
+		fmt.Printf("Error during argument parsing of command '%s'\n", c.Command)
+		fmt.Println(err)
+		return
+	}
+
+	isAvailable := isCommandAvailable(command)
+
+	if !isAvailable {
+		fmt.Printf("Command %s not found\n", command)
+		c.ActionChan <- fmt.Errorf("Command %s not found!", command)
+		return
+	}
+
 	c.ActionChan <- nil
 }
 
@@ -48,6 +73,7 @@ func (c Command) Execute() {
 
 	if err != nil {
 		fmt.Println(err.Error())
+		c.ActionChan <- err
 	}
 
 	fmt.Println(string(stdout[:]))
