@@ -122,6 +122,7 @@ func GetAllActions() []DocumentedAction {
 		Printer{},
 		TimeOut{},
 		Command{},
+		ShellScript{},
 		Shutdown{},
 	}
 }
