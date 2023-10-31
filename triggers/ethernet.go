@@ -3,7 +3,7 @@ package triggers
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"time"
 
 	"unknown.com/gokill/actions"
@@ -17,7 +17,7 @@ type EthernetDisconnect struct {
 }
 
 func isEthernetConnected(deviceName string) bool {
-	content, err := ioutil.ReadFile(fmt.Sprintf("/sys/class/net/%s/operstate", deviceName))
+	content, err := os.ReadFile(fmt.Sprintf("/sys/class/net/%s/operstate", deviceName))
 
 	if err != nil {
 		fmt.Println(err)
