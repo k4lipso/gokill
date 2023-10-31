@@ -62,6 +62,38 @@ gokill should run as daemon. config should be read from /etc/somename/config.jso
 ]
 ```
 
+## nix support
+
+gokill enjoys full nix support. gokill exposes a nix flakes that outputs a gokill package, a nixosModule and more.
+That means you can super easily incorporate gokill into your existing nixosConfigurations. 
+Here is a small example config:
+
+``` nix
+{
+  services.gokill.enable = true;
+  services.gokill.triggers = [
+    {
+      type = "EthernetDisconnect";
+      name = "MainTrigger";
+      options = {
+        interfaceName = "eth1";
+      };
+      actions = [
+        {
+            type = "Command";
+            options = {
+                command = "echo hello world";
+            };
+            stage = 1;
+        }
+      ];
+    }
+  ];
+}
+```
+
+This will automatically configure and enable a systemd running gokill as root user in the background
+
 ## actions
 - [x] shutdown
 - [ ] wipe ram
