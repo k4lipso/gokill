@@ -45,7 +45,7 @@ func (a StagedActions) executeInternal(f func(Action)) {
 			err := <-a.ActionChan
 
 			if err != nil {
-				fmt.Printf("Error occured on Stage %d: %s", idx+1, err)
+				fmt.Printf("Error occured on Stage %d: %s\n", idx+1, err)
 			}
 		}
 	}
