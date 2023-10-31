@@ -44,89 +44,13 @@
 
     packages.x86_64-linux.default = self.packages.x86_64-linux.gokill;
 
-    nixosModules.gokill = { config, lib, pkgs, ... }: 
-    let
-      cfg = config.services.gokill;
-      configFile = pkgs.writeText "config.json" (builtins.toJSON cfg.triggers); 
-      gokill-pkg = self.packages.x86_64-linux.gokill;
-    in
-    {
-      options = {
-        services.gokill = {
-          enable = lib.mkOption {
-            default = false;
-            type = lib.types.bool;
-            description = lib.mdDoc ''
-              Enables gokill daemon
-              '';
-          };
-
-          triggers = lib.mkOption {
-            description = "list of triggers";
-            default = [];
-            type = with lib.types; lib.types.listOf ( submodule {
-              options = {
-                type = lib.mkOption {
-                  type = lib.types.str;
-                };
-
-                name = lib.mkOption {
-                  type = lib.types.str;
-                };
-
-                options = lib.mkOption {
-                  type = lib.types.attrs;
-                };
-
-                actions = lib.mkOption {
-                  description = "list of actions";
-                  type = with lib.types; lib.types.listOf ( submodule {
-                    options = {
-                      type = lib.mkOption {
-                        type = lib.types.str;
-                      };
-
-                      options = lib.mkOption {
-                        type = lib.types.attrs;
-                      };
-
-                      stage = lib.mkOption {
-                        type = lib.types.int;
-                      };
-                    };
-                  });
-                };
-              };
-            });
-          };
-
-          extraConfig = lib.mkOption {
-            type = lib.types.str;
-            description = lib.mdDoc ''
-              gokill config.json
-              '';
-          };
-        };
-      };
-
-      config = lib.mkIf cfg.enable {
-        systemd.services.gokill = {
-          description = "gokill daemon";
-          serviceConfig = {
-            Type = "simple";
-            ExecStart = "${gokill-pkg}/bin/gokill -c ${configFile}";
-            Restart = "on-failure";
-          };
-
-          wantedBy = [ "default.target" ];
-        };
-      };
-    };
+    nixosModules.gokill = import ./nixos-modules/gokill.nix { self = self; };
 
     packages.x86_64-linux.testVm = 
     let
       nixos = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
+        specialArgs = { inherit self; };
         modules = [
           self.nixosModules.gokill
           {
