@@ -49,7 +49,7 @@ func (p Printer) GetExample() string {
 	return `
 		{
 			type: "Print",
-			"options: {
+			"options": {
 				"message": "Hello World!"
 			}
 		}

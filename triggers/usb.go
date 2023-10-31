@@ -96,7 +96,7 @@ func (p UsbDisconnect) GetExample() string {
 		"options": {
 			"deviceId": "ata-Samsung_SSD_860_EVO_1TB_S4AALKWJDI102",
 			"waitTillConnected": true
-		}
+		},
 		"actions": [
 		]
 	}

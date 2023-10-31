@@ -95,7 +95,7 @@ func (p EthernetDisconnect) GetExample() string {
 		"options": {
 			"interfaceName": "eth0",
 			"waitTillConnected": true
-		}
+		},
 		"actions": [
 		]
 	}

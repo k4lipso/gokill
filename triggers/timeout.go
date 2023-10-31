@@ -54,7 +54,7 @@ func (p TimeOut) GetExample() string {
 		"name": "Example Trigger",
 		"options": {
 			"duration": 5
-		}
+		},
 		"actions": [
 		]
 	}
