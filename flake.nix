@@ -176,5 +176,14 @@
       program = builtins.toString (nixpkgs.legacyPackages."x86_64-linux".writeScript "docs" ''
         ${pkgs.python3}/bin/python3 -m http.server --directory ${self.packages."x86_64-linux".docs}/share/doc'');
     };
+
+    checks = forAllSystems (system: let
+      checkArgs = {
+        pkgs = nixpkgs.legacyPackages.${system};
+        inherit self;
+      };
+    in {
+      gokill = import ./test/test.nix checkArgs;
+    });
   };
 }
