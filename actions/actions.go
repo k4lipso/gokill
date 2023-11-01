@@ -124,6 +124,7 @@ func GetAllActions() []DocumentedAction {
 		ShellScript{},
 		Shutdown{},
 		SendMatrix{},
+		SendTelegram{},
 		TimeOut{},
 	}
 }
