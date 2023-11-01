@@ -98,11 +98,11 @@ func (s SendMatrix) DryExecute() {
 }
 
 func (s SendMatrix) Execute() {
-	fmt.Println("SendMatrix: Trying to send test message")
+	fmt.Println("SendMatrix: Trying to send message")
 	err := s.sendMessage(s.Message)	
 
 	if err != nil {
-		fmt.Println("SendMatrix: failed to send test message")
+		fmt.Println("SendMatrix: failed to send message")
 	}
 
 	s.ActionChan <- err
