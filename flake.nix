@@ -4,13 +4,17 @@
   #nixpkgs for testing framework
   inputs.nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
 
-  outputs = { self, nixpkgs, ... }: 
+  inputs.utils.url = "github:numtide/flake-utils";
+
+  outputs = { self, nixpkgs, utils, ... }: 
+
+  nixpkgs.lib.attrsets.recursiveUpdate 
+  (utils.lib.eachSystem (utils.lib.defaultSystems) ( system:
   let
-    forAllSystems = nixpkgs.lib.genAttrs [ "x86_64-linux" ];
-    pkgs = nixpkgs.legacyPackages."x86_64-linux";
+    pkgs = nixpkgs.legacyPackages.${system};
   in
   {
-    devShell."x86_64-linux" = pkgs.mkShell {
+    devShells.default = pkgs.mkShell {
       packages = with pkgs; [
         go
         gotools
@@ -19,40 +23,52 @@
       ];
     };
 
-    packages.x86_64-linux.gokill = nixpkgs.legacyPackages.x86_64-linux.buildGoModule rec {
-      pname = "gokill";
-      version = "1.0";
-      vendorHash = "sha256-MVIvXxASUO33Ca34ruIz4S0QDJcW2unaG4+Zo73g/9o=";
-      src = ./.;
+    packages = {
+      gokill = pkgs.buildGoModule rec {
+        pname = "gokill";
+        version = "1.0";
+        vendorHash = "sha256-8xHjVwNskgiSoDKbOpL2phHub1F21ios1t9BcZB944o=";
+        src = ./.;
 
-      buildInputs = [
-        pkgs.olm
-      ];
+        buildInputs = [
+          pkgs.olm
+        ];
 
-      postInstall = ''
-        '';
+        postInstall = ''
+          '';
+      };
+
+      gokill-docbuilder = pkgs.buildGoModule rec {
+        pname = "docbuilder";
+        version = "1.0";
+        vendorHash = "sha256-8xHjVwNskgiSoDKbOpL2phHub1F21ios1t9BcZB944o=";
+        buildFLags = "-o . $dest/cmd/gokill/docbuilder";
+        src = ./.;
+
+        buildInputs = [
+          pkgs.olm
+        ];
+
+        postInstall = ''
+          '';
+      };
+
+
+      docs = pkgs.callPackage (import ./docs/default.nix) { self = self; };
+
+      default = self.packages.${system}.gokill;
+
     };
 
-    packages.x86_64-linux.gokill-docbuilder = nixpkgs.legacyPackages.x86_64-linux.buildGoModule rec {
-      pname = "docbuilder";
-      version = "1.0";
-      vendorHash = "sha256-MVIvXxASUO33Ca34ruIz4S0QDJcW2unaG4+Zo73g/9o=";
-      buildFLags = "-o . $dest/cmd/gokill/docbuilder";
-      src = ./.;
-
-      buildInputs = [
-        pkgs.olm
-      ];
-
-      postInstall = ''
-        '';
+    apps = {
+      docs = {
+        type = "app";
+        program = builtins.toString (pkgs.writeScript "docs" ''
+          ${pkgs.python3}/bin/python3 -m http.server --directory ${self.packages."${system}".docs}/share/doc'');
+      };
     };
 
-
-    packages.x86_64-linux.docs = pkgs.callPackage (import ./docs/default.nix) { self = self; };
-
-    packages.x86_64-linux.default = self.packages.x86_64-linux.gokill;
-
+  })) ({
     nixosModules.gokill = import ./nixos-modules/gokill.nix { self = self; };
 
     packages.x86_64-linux.testVm = 
@@ -64,6 +80,7 @@
           self.nixosModules.gokill
           {
             services.gokill.enable = true;
+            services.gokill.testRun = false;
             services.gokill.triggers = [
               {
                 type = "Timeout";
@@ -72,19 +89,12 @@
                   duration =  10;
                 };
                 actions = [
-                    {
-                        type = "Timeout";
-                        options = {
-                          duration = 5;
-                        };
-                        stage = 1;
-                    }
-                    {
-                        type = "Shutdown";
-                        options = {
-                        };
-                        stage = 2;
-                    }
+                  {
+                    type = "Shutdown";
+                    options = {
+                    };
+                    stage = 2;
+                  }
                 ];
               }
             ];
@@ -104,19 +114,13 @@
       '');
     };
 
-    apps.x86_64-linux.docs = {
-      type = "app";
-      program = builtins.toString (nixpkgs.legacyPackages."x86_64-linux".writeScript "docs" ''
-        ${pkgs.python3}/bin/python3 -m http.server --directory ${self.packages."x86_64-linux".docs}/share/doc'');
-    };
-
-    checks = forAllSystems (system: let
+    checks.x86_64-linux = let
       checkArgs = {
-        pkgs = nixpkgs.legacyPackages.${system};
+        pkgs = nixpkgs.legacyPackages."x86_64-linux";
         inherit self;
       };
     in {
       gokill = import ./test/test.nix checkArgs;
-    });
-  };
+    };
+  }) ;
 }
