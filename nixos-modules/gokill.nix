@@ -3,6 +3,7 @@ let
   cfg = config.services.gokill;
   configFile = pkgs.writeText "config.json" (builtins.toJSON cfg.triggers); 
   gokill-pkg = self.packages.x86_64-linux.gokill;
+  testRun = if cfg.testRun then "-t" else "";
 in
 {
   options = with lib; {
@@ -12,6 +13,14 @@ in
         type = types.bool;
         description = mdDoc ''
           Enables gokill daemon
+          '';
+      };
+
+      testRun = mkOption {
+        default = false;
+        type = types.bool;
+        description = mdDoc ''
+          When set to true gokill is performing a test run
           '';
       };
 
@@ -61,7 +70,7 @@ in
       description = "gokill daemon";
       serviceConfig = {
         Type = "simple";
-        ExecStart = "${gokill-pkg}/bin/gokill -c ${configFile}";
+        ExecStart = "${gokill-pkg}/bin/gokill -c ${configFile} ${testRun}";
         Restart = "on-failure";
       };
 
