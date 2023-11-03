@@ -3,6 +3,7 @@ module unknown.com/gokill
 go 1.21.3
 
 require (
+	github.com/apsdehal/go-logger v0.0.0-20190515212710-b0d6ccfee0e6
 	github.com/go-telegram-bot-api/telegram-bot-api/v5 v5.5.1
 	github.com/mattn/go-sqlite3 v1.14.17
 	maunium.net/go/mautrix v0.16.1

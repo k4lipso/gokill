@@ -24,19 +24,19 @@ func isCommandAvailable(name string) bool {
 }
 
 func (c Command) DryExecute() {
-	fmt.Printf("Test Executing Command:\n%s\n", c.Command)
+	internal.LogDoc(c).Infof("Test Executing Command: %s", c.Command)
 	command, _, err := c.splitCommandString()
 
 	if err != nil {
-		fmt.Printf("Error during argument parsing of command '%s'\n", c.Command)
-		fmt.Println(err)
+		internal.LogDoc(c).Errorf("Error during argument parsing of command '%s'", c.Command)
+		c.ActionChan <- fmt.Errorf("Error on Command action: %s", err)
 		return
 	}
 
 	isAvailable := isCommandAvailable(command)
 
 	if !isAvailable {
-		fmt.Printf("Command %s not found\n", command)
+		internal.LogDoc(c).Warningf("Command %s not found", command)
 		c.ActionChan <- fmt.Errorf("Command %s not found!", command)
 		return
 	}
@@ -60,7 +60,7 @@ func (c Command) splitCommandString() (string, []string, error) {
 
 func (c Command) Execute() {
 	command, args, err := c.splitCommandString()
-	fmt.Println("Executing command: ", c.Command)
+	internal.LogDoc(c).Infof("Executing command: ", c.Command)
 
 	if err != nil {
 		c.ActionChan <- err
@@ -72,11 +72,11 @@ func (c Command) Execute() {
 	stdout, err := cmd.Output()
 
 	if err != nil {
-		fmt.Println(err.Error())
-		c.ActionChan <- err
+		internal.LogDoc(c).Errorf("%s", err.Error())
+		c.ActionChan <- fmt.Errorf("Executing Command '%s' failed: %s", c.Command, err)
 	}
 
-	fmt.Println(string(stdout[:]))
+	internal.LogDoc(c).Infof("Command Output:\n%s", string(stdout[:]))
 
 	c.ActionChan <- nil
 }

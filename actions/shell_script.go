@@ -18,7 +18,6 @@ func isExecutableFile(path string) bool {
 	fi, err := os.Lstat(path)
 
 	if err != nil {
-		fmt.Println("Test executing Shellscript Failed.")
 		return false
 	}
 
@@ -33,18 +32,18 @@ func isExecutableFile(path string) bool {
 }
 
 func (c ShellScript) DryExecute() {
-	fmt.Printf("Test Executing ShellScript:\n%s\n", c.Path)
+	internal.LogDoc(c).Infof("Test Executing ShellScript:\n%s", c.Path)
 
 	_, err := os.Open(c.Path)
 
 	if err != nil {
-		fmt.Println("Test executing Shellscript Failed.")
+		internal.LogDoc(c).Warning("Test executing Shellscript Failed.")
 		c.ActionChan <- err
 		return
 	}
 
 	if !isExecutableFile(c.Path) {
-		fmt.Println("Test executing Shellscript Failed.")
+		internal.LogDoc(c).Warning("Test executing Shellscript Failed.")
 		c.ActionChan <- fmt.Errorf("File is not executable: %s", c.Path)
 		return
 	}
@@ -54,7 +53,7 @@ func (c ShellScript) DryExecute() {
 
 func (c ShellScript) Execute() {
 	if !isExecutableFile(c.Path) {
-		fmt.Println("Test executing Shellscript Failed.")
+		internal.LogDoc(c).Warning("Executing Shellscript Failed.")
 		c.ActionChan <- fmt.Errorf("File is not executable: %s", c.Path)
 		return
 	}
@@ -64,11 +63,11 @@ func (c ShellScript) Execute() {
 	stdout, err := cmd.Output()
 
 	if err != nil {
-		fmt.Println(err.Error())
-		c.ActionChan <- err
+		internal.LogDoc(c).Warning("Failed to execute Shellscript")
+		c.ActionChan <- fmt.Errorf("Error during ShellScript execute: %s", err)
 	}
 
-	fmt.Println(string(stdout[:]))
+	internal.LogDoc(c).Infof("Shellscript output:\n%s", string(stdout[:]))
 	c.ActionChan <- nil
 }
 

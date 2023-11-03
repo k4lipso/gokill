@@ -53,7 +53,7 @@ func (s SendMatrix) sendMessage(message string) error {
 
 	client.Crypto = cryptoHelper
 
-	fmt.Println("Matrix Client Now running")
+	internal.LogDoc(s).Info("Matrix Client Now running")
 	syncCtx, cancelSync := context.WithCancel(context.Background())
 	var syncStopWait sync.WaitGroup
 	syncStopWait.Add(1)
@@ -72,8 +72,8 @@ func (s SendMatrix) sendMessage(message string) error {
 	if err != nil {
 		return fmt.Errorf("Failed to send event")
 	} else {
-		fmt.Println("Matrix Client: Message sent")
-		fmt.Printf("Matrix Client: event_id: %s", resp.EventID.String())
+		internal.LogDoc(s).Info("Matrix Client: Message sent")
+		internal.LogDoc(s).Infof("Matrix Client: event_id: %s", resp.EventID.String())
 	}
 
 	cancelSync()
@@ -87,22 +87,22 @@ func (s SendMatrix) sendMessage(message string) error {
 }
 
 func (s SendMatrix) DryExecute() {
-	fmt.Println("SendMatrix: Trying to send test message")
+	internal.LogDoc(s).Info("SendMatrix: Trying to send test message")
 	err := s.sendMessage(s.TestMessage)	
 
 	if err != nil {
-		fmt.Println("SendMatrix: failed to send test message")
+		internal.LogDoc(s).Info("SendMatrix: failed to send test message")
 	}
 
 	s.ActionChan <- err
 }
 
 func (s SendMatrix) Execute() {
-	fmt.Println("SendMatrix: Trying to send message")
+	internal.LogDoc(s).Info("SendMatrix: Trying to send message")
 	err := s.sendMessage(s.Message)	
 
 	if err != nil {
-		fmt.Println("SendMatrix: failed to send message")
+		internal.LogDoc(s).Info("SendMatrix: failed to send message")
 	}
 
 	s.ActionChan <- err

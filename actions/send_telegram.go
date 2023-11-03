@@ -24,9 +24,6 @@ func (s SendTelegram) sendMessage(message string) error {
 	}
 
 	bot.Debug = true
-
-	fmt.Printf("Authorized on account %s", bot.Self.UserName)
-
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
 
@@ -37,22 +34,22 @@ func (s SendTelegram) sendMessage(message string) error {
 }
 
 func (s SendTelegram) DryExecute() {
-	fmt.Println("SendTelegram: Trying to send test message")
-	err := s.sendMessage(s.TestMessage)	
+	internal.LogDoc(s).Info("SendTelegram: Trying to send test message")
+	err := s.sendMessage(s.TestMessage)
 
 	if err != nil {
-		fmt.Println("SendTelegram: failed to send test message")
+		internal.LogDoc(s).Info("SendTelegram: failed to send test message")
 	}
 
 	s.ActionChan <- err
 }
 
 func (s SendTelegram) Execute() {
-	fmt.Println("SendTelegram: Trying to send message")
+	internal.LogDoc(s).Info("SendTelegram: Trying to send message")
 	err := s.sendMessage(s.Message)	
 
 	if err != nil {
-		fmt.Println("SendTelegram: failed to send message")
+		internal.LogDoc(s).Info("SendTelegram: failed to send message")
 	}
 
 	s.ActionChan <- err

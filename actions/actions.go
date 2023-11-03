@@ -36,7 +36,7 @@ func (a StagedActions) executeInternal(f func(Action)) {
 			continue
 		}
 
-		fmt.Printf("Execute Stage %v\n", idx+1)
+		internal.Log.Infof("Execute Stage %v", idx+1)
 		for actionidx, _ := range stage.Actions {
 			go f(stage.Actions[actionidx])
 		}
@@ -45,7 +45,7 @@ func (a StagedActions) executeInternal(f func(Action)) {
 			err := <-a.ActionChan
 
 			if err != nil {
-				fmt.Printf("Error occured on Stage %d: %s\n", idx+1, err)
+				internal.Log.Errorf("Error occured on Stage %d: %s", idx+1, err)
 			}
 		}
 	}

@@ -1,7 +1,6 @@
 package triggers
 import (
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"unknown.com/gokill/actions"
@@ -14,10 +13,10 @@ type TimeOut struct {
 }
 
 func (t TimeOut) Listen() {
-	fmt.Println("TimeOut listens")
-	fmt.Println(t.Duration)
+	internal.LogDoc(t).Info("TimeOut listens")
+	internal.LogDoc(t).Infof("%d", t.Duration)
 	time.Sleep(time.Duration(t.Duration) * time.Second)
-	fmt.Println("TimeOut fires")
+	internal.LogDoc(t).Notice("TimeOut fires")
 	actions.Fire(t.action)
 }
 

@@ -12,6 +12,7 @@
   (utils.lib.eachSystem (utils.lib.defaultSystems) ( system:
   let
     pkgs = nixpkgs.legacyPackages.${system};
+    currentVendorHash = "sha256-Q14p7L2Ez/kvBhMUxlyMA1I/XEIxgSXOp4dpmH/SQyI=";
   in
   {
     devShells.default = pkgs.mkShell {
@@ -27,7 +28,7 @@
       gokill = pkgs.buildGoModule rec {
         pname = "gokill";
         version = "1.0";
-        vendorHash = "sha256-8xHjVwNskgiSoDKbOpL2phHub1F21ios1t9BcZB944o=";
+        vendorHash = currentVendorHash;
         src = ./.;
 
         buildInputs = [
@@ -41,7 +42,7 @@
       gokill-docbuilder = pkgs.buildGoModule rec {
         pname = "docbuilder";
         version = "1.0";
-        vendorHash = "sha256-8xHjVwNskgiSoDKbOpL2phHub1F21ios1t9BcZB944o=";
+        vendorHash = currentVendorHash;
         buildFLags = "-o . $dest/cmd/gokill/docbuilder";
         src = ./.;
 

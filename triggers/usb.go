@@ -3,7 +3,6 @@ package triggers
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"os"
 	"time"
 
@@ -35,8 +34,8 @@ func (t UsbDisconnect) Listen() {
 			time.Sleep(1 * time.Second)
 		}
 
-		fmt.Printf("Device %s detected.\n", t.DeviceName)
-		fmt.Println("UsbDisconnect Trigger is Armed")
+		internal.LogDoc(t).Infof("Device %s detected.\n", t.DeviceName)
+		internal.LogDoc(t).Notice("Trigger is Armed")
 	}
 
 	for {

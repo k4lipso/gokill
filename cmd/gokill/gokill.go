@@ -37,11 +37,16 @@ func GetDocumentation() string {
 }
 
 func main() {
+
 	configFilePath := flag.String("c", "", "path to config file")
 	showDoc := flag.Bool("d", false, "show doc")
 	testRun := flag.Bool("t", false, "test run")
+	verbose := flag.Bool("verbose", false, "log debug info")
 
 	flag.Parse()
+
+	internal.InitLogger()
+	internal.SetVerbose(*verbose)
 
 	if *showDoc {
 		fmt.Print(GetDocumentation())
@@ -49,7 +54,7 @@ func main() {
 	}
 
 	if *configFilePath == "" {
-		fmt.Println("No config file given. Use --help to show usage.")
+		internal.Log.Warning("No config file given. Use --help to show usage.")
 		return
 	}
 
@@ -58,7 +63,7 @@ func main() {
 	configFile, err := os.ReadFile(*configFilePath)
 
 	if err != nil {
-		fmt.Println("Error loading config file: ", err)
+		internal.Log.Errorf("Error loading config file: %s", err)
 		return
 	}
 
@@ -66,7 +71,7 @@ func main() {
 	err = json.Unmarshal(configFile, &f)
 
 	if err != nil {
-		fmt.Println(err)
+		internal.Log.Errorf("Error pasing json file: %s", err)
 		return
 	}
 
@@ -75,7 +80,7 @@ func main() {
 		trigger, err := triggers.NewTrigger(cfg)
 
 		if err != nil {
-			fmt.Println(err)
+			internal.Log.Errorf("%s", err)
 			return
 		}
 

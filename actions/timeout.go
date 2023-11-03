@@ -2,7 +2,6 @@ package actions
 
 import (
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"unknown.com/gokill/internal"
@@ -18,7 +17,7 @@ func (t TimeOut) DryExecute() {
 }
 
 func (t TimeOut) Execute() {
-	fmt.Printf("Waiting %d seconds\n", t.Duration)
+	internal.LogDoc(t).Infof("Waiting %d seconds", t.Duration)
 	time.Sleep(time.Duration(t.Duration) * time.Second)
 	t.ActionChan <- nil
 }

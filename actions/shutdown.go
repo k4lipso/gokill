@@ -1,7 +1,6 @@
 package actions
 
 import (
-	"fmt"
 	"os/exec"
 	"encoding/json"
 
@@ -14,17 +13,17 @@ type Shutdown struct {
 }
 
 func (s Shutdown) DryExecute() {
-	fmt.Printf("shutdown -h %s\n", s.Timeout)
-	fmt.Println("Test Shutdown executed...")
+	internal.LogDoc(s).Infof("shutdown -h %s", s.Timeout)
+	internal.LogDoc(s).Info("Test Shutdown executed...")
 	s.ActionChan <- nil
 }
 
 func (s Shutdown) Execute() {
 	if err := exec.Command("shutdown", "-h", s.Timeout).Run(); err != nil {
-		fmt.Println("Failed to initiate shutdown:", err)
+		internal.LogDoc(s).Errorf("Failed to initiate shutdown: %s", err)
 	}
 
-	fmt.Println("Shutdown executed...")
+	internal.LogDoc(s).Notice("Shutdown executed...")
 
 	s.ActionChan <- nil
 }
@@ -37,7 +36,7 @@ func (s Shutdown) Create(config internal.ActionConfig, c ActionResultChan) (Acti
 	err := json.Unmarshal(config.Options, &result)
 
 	if err != nil {
-		fmt.Println("Parsing Shutdown options failed.")
+		internal.LogDoc(s).Warning("Parsing Shutdown options failed.")
 		return Shutdown{}, err
 	}
 

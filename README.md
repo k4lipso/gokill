@@ -1,4 +1,23 @@
 # gokill
+
+gokill is aimed at activists, journalists and others that need to protect their data against access under all circumstances.
+gokill falls under the category of anti-forensic tools, helping you to protect yourself against repression.
+It is built for worst case scenarios when intruders physical gaining access to a device.
+In such heated situations gokill helps you automatically executing tasks like:
+- locking the screen 
+- notify someone
+- deleting data
+- encrypting partitions 
+- destroying encrypted partitions
+- and many more
+
+the tasks gokill executes could be done by hand using shellscripts, cronjobs, daemons ect.
+but that means everyone needs to figure it out for themselves, and eventually make mistakes.
+the idea of gokill is to provide a wide variarity of possibilities out of the box while making sure they are well tested.
+
+
+gokill aims to be highly configurable and easily extendable.
+
 'gokill' is a tool that completes some actions when a certain event occurs.
 actions can vary from shuting down the machine to sending mails over erasing data.
 actions can be triggert by certain conditions like specific outcomes of unix

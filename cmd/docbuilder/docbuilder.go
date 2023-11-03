@@ -37,7 +37,7 @@ func writeToFile(path string, documenter internal.Documenter) error {
 	f, err := os.Create(fileName)
 
 	if err != nil {
-		fmt.Println(err)
+		internal.Log.Errorf("Error during writeToFile: %s", err)
 		return err
 	}
 
@@ -46,7 +46,7 @@ func writeToFile(path string, documenter internal.Documenter) error {
 	_, err = f.WriteString(getMarkdown(documenter))
 
 	if err != nil {
-		fmt.Println(err)
+		internal.Log.Errorf("Error during writeToFile: %s", err)
 		return err
 	}
 
@@ -86,8 +86,11 @@ func printDocumentersSummary() {
 
 func main() {
 	outputPath := flag.String("output", "", "path where docs/ shoud be created")
-
+	verbose := flag.Bool("verbose", false, "log debug information")
 	flag.Parse()
+
+	internal.InitLogger()
+	internal.SetVerbose(*verbose)
 
 	if *outputPath == "" {
 		printDocumentersSummary()

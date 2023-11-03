@@ -20,7 +20,7 @@ func isEthernetConnected(deviceName string) bool {
 	content, err := os.ReadFile(fmt.Sprintf("/sys/class/net/%s/operstate", deviceName))
 
 	if err != nil {
-		fmt.Println(err)
+		internal.LogDoc(EthernetDisconnect{}).Errorf("Cant read devices operstate. Check the deviceName. error: %s", err)
 		return false
 	}
 
