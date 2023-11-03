@@ -18,7 +18,7 @@ type SendTelegram struct {
 }
 
 func (s SendTelegram) sendMessage(message string) error {
-	bot, err := tgbotapi.NewBotAPI("5221828879:AAGrETcxOpAhzPJUl-fUqMJGUAe6ShSuuRs")
+	bot, err := tgbotapi.NewBotAPI(s.Token)
 	if err != nil {
 		return fmt.Errorf("SendTelegram sendMessage error: %s", err)
 	}
@@ -28,7 +28,11 @@ func (s SendTelegram) sendMessage(message string) error {
 	u.Timeout = 60
 
 	msg := tgbotapi.NewMessage(-746157642, message)
-	bot.Send(msg)
+	_, err = bot.Send(msg)
+
+	if err != nil {
+		return fmt.Errorf("SendTelegram sendMessage error: %s", err)
+	}
 
 	return nil
 }
