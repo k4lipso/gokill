@@ -5,7 +5,7 @@ gokill falls under the category of anti-forensic tools, helping you to protect y
 It is built for worst case scenarios when intruders physical gaining access to a device.
 In such heated situations gokill helps you automatically executing tasks like:
 - locking the screen 
-- notify someone
+- sending a chat message
 - deleting data
 - encrypting partitions 
 - destroying encrypted partitions
@@ -14,7 +14,6 @@ In such heated situations gokill helps you automatically executing tasks like:
 the tasks gokill executes could be done by hand using shellscripts, cronjobs, daemons ect.
 but that means everyone needs to figure it out for themselves, and eventually make mistakes.
 the idea of gokill is to provide a wide variarity of possibilities out of the box while making sure they are well tested.
-
 
 gokill aims to be highly configurable and easily extendable.
 
