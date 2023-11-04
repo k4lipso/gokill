@@ -34,7 +34,7 @@ func (t UsbDisconnect) Listen() {
 			time.Sleep(1 * time.Second)
 		}
 
-		internal.LogDoc(t).Infof("Device %s detected.\n", t.DeviceName)
+		internal.LogDoc(t).Infof("Device %s detected.", t.DeviceName)
 		internal.LogDoc(t).Notice("Trigger is Armed")
 	}
 

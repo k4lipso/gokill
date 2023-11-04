@@ -23,7 +23,7 @@ func (s SendTelegram) sendMessage(message string) error {
 		return fmt.Errorf("SendTelegram sendMessage error: %s", err)
 	}
 
-	bot.Debug = true
+	bot.Debug = false
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
 
