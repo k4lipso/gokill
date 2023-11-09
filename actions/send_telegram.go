@@ -3,6 +3,7 @@ package actions
 import (
 	"fmt"
 	"encoding/json"
+	//"strconv"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
@@ -11,7 +12,7 @@ import (
 
 type SendTelegram struct {
 	Token string `json:"token"`
-	ChatId string `json:"chatId"`
+	ChatId int64 `json:"chatId"`
 	Message string `json:"message"`
 	TestMessage string `json:"testMessage"`
 	ActionChan ActionResultChan
@@ -27,7 +28,8 @@ func (s SendTelegram) sendMessage(message string) error {
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
 
-	msg := tgbotapi.NewMessage(-746157642, message)
+	chatId := s.ChatId
+	msg := tgbotapi.NewMessage(chatId, message)
 	_, err = bot.Send(msg)
 
 	if err != nil {
@@ -60,7 +62,9 @@ func (s SendTelegram) Execute() {
 }
 
 func CreateSendTelegram(config internal.ActionConfig, c ActionResultChan) (SendTelegram, error) {
-	result := SendTelegram{}
+	result := SendTelegram{
+		ChatId: 0,
+	}
 
 	err := json.Unmarshal(config.Options, &result)
 
@@ -72,7 +76,7 @@ func CreateSendTelegram(config internal.ActionConfig, c ActionResultChan) (SendT
 		return SendTelegram{}, internal.OptionMissingError{"token"}
 	}
 
-	if result.ChatId == "" {
+	if result.ChatId == 0 {
 		return SendTelegram{}, internal.OptionMissingError{"chatId"}
 	}
 
@@ -106,7 +110,7 @@ func (p SendTelegram) GetExample() string {
 		"type": "SendTelegram",
 		"options": {
 			"token": "5349923487:FFGrETxa0pA29d02Akslw-lkwjdA92KAH2",
-			"chatId": "-832345892",
+			"chatId": -832345892,
 			"message": "attention, intruders got my device!",
 			"testMessage": "this is just a test, no worries"
 		}
