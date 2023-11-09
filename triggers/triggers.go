@@ -29,6 +29,7 @@ func NewTrigger(config internal.KillSwitchConfig) (Trigger, error) {
 func GetAllTriggers() []DocumentedTrigger {
 	return []DocumentedTrigger{
 		EthernetDisconnect{},
+		ReceiveTelegram{},
 		TimeOut{},
 		UsbDisconnect{},
 	}
