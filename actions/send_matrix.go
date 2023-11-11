@@ -15,7 +15,7 @@ import (
 	"maunium.net/go/mautrix/id"
 	"maunium.net/go/mautrix/crypto/cryptohelper"
 
-	"unknown.com/gokill/internal"
+	"github.com/k4lipso/gokill/internal"
 )
 
 type SendMatrix struct {

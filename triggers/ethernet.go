@@ -6,8 +6,8 @@ import (
 	"os"
 	"time"
 
-	"unknown.com/gokill/actions"
-	"unknown.com/gokill/internal"
+	"github.com/k4lipso/gokill/actions"
+	"github.com/k4lipso/gokill/internal"
 )
 
 type EthernetDisconnect struct {

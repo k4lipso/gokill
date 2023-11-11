@@ -1,4 +1,4 @@
-module unknown.com/gokill
+module github.com/k4lipso/gokill
 
 go 1.21.3
 

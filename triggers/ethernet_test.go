@@ -3,7 +3,7 @@ package triggers
 import (
 	"testing"
 
-	"unknown.com/gokill/internal"
+	"github.com/k4lipso/gokill/internal"
 )
 
 func TestEthernetDisconnetConfig(t *testing.T) {

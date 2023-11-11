@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sort"
 
-	"unknown.com/gokill/internal"
+	"github.com/k4lipso/gokill/internal"
 )
 
 type ActionResultChan chan error
