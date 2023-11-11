@@ -3,7 +3,7 @@ package actions
 import (
 	"encoding/json"
 
-	"unknown.com/gokill/internal"
+	"github.com/k4lipso/gokill/internal"
 )
 
 type Printer struct {

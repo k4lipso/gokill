@@ -6,8 +6,8 @@ import (
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
-	"unknown.com/gokill/internal"
-	"unknown.com/gokill/actions"
+	"github.com/k4lipso/gokill/internal"
+	"github.com/k4lipso/gokill/actions"
 )
 
 type ReceiveTelegram struct {

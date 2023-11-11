@@ -3,7 +3,7 @@ package triggers
 import (
 	"fmt"
 
-	"unknown.com/gokill/internal"
+	"github.com/k4lipso/gokill/internal"
 )
 
 type Trigger interface {

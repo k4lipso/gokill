@@ -4,7 +4,7 @@ import (
 	"os/exec"
 	"encoding/json"
 
-	"unknown.com/gokill/internal"
+	"github.com/k4lipso/gokill/internal"
 )
 
 type Shutdown struct {

@@ -7,7 +7,7 @@ import (
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
-	"unknown.com/gokill/internal"
+	"github.com/k4lipso/gokill/internal"
 )
 
 type SendTelegram struct {

@@ -6,9 +6,9 @@ import (
 	"os"
 	"flag"
 
-	"unknown.com/gokill/actions"
-	"unknown.com/gokill/triggers"
-	"unknown.com/gokill/internal"
+	"github.com/k4lipso/gokill/actions"
+	"github.com/k4lipso/gokill/triggers"
+	"github.com/k4lipso/gokill/internal"
 )
 
 func getMarkdown(documenter internal.Documenter) string {

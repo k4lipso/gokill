@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"os"
 
-	"unknown.com/gokill/actions"
-	"unknown.com/gokill/internal"
-	"unknown.com/gokill/triggers"
+	"github.com/k4lipso/gokill/actions"
+	"github.com/k4lipso/gokill/internal"
+	"github.com/k4lipso/gokill/triggers"
 )
 
 func GetDocumentation() string {

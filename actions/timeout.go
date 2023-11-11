@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"unknown.com/gokill/internal"
+	"github.com/k4lipso/gokill/internal"
 )
 
 type TimeOut struct {

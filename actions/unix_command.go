@@ -6,7 +6,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"unknown.com/gokill/internal"
+	"github.com/k4lipso/gokill/internal"
 )
 
 type Command struct {
