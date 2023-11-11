@@ -108,7 +108,7 @@ func (p Command) GetName() string {
 }
 
 func (p Command) GetDescription() string {
-	return "Invoces given command using exec."
+	return "Invokes given command using exec."
 }
 
 func (p Command) GetExample() string {
