@@ -1,0 +1,18 @@
+[
+    {
+
+        "type": "Timeout", 
+        "name": "example trigger",
+        "options": {
+          "duration": 5
+        },
+        "actions": [
+            {
+                "type": "Print",
+                "options": {
+                  "message": "hello world"
+                }
+            }
+        ]
+    }
+]

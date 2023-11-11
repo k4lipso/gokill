@@ -21,10 +21,12 @@
         gotools
         mdbook
         olm
+
+        dpkg
       ];
     };
 
-    packages = {
+    packages = rec {
       gokill = pkgs.buildGoModule rec {
         pname = "gokill";
         version = "1.0";
@@ -36,6 +38,7 @@
         ];
 
         postInstall = ''
+          cp -r ./etc $out/ #for .deb packages
           '';
       };
 
@@ -54,6 +57,16 @@
           '';
       };
 
+      gokillSnap = pkgs.snapTools.makeSnap {
+        meta = {
+          name = "gokill";
+          summary = "simple but efficient";
+          description = "this should be longer";
+          architectures = [ "amd64" ];
+          confinement = "classic";
+          apps.gokill.command = "${gokill}/bin/gokill";
+        };
+      };
 
       docs = pkgs.callPackage (import ./docs/default.nix) { self = self; };
 
@@ -61,11 +74,51 @@
 
     };
 
+    bundlers.gokillDeb = pkg: pkgs.stdenv.mkDerivation {
+      name = "deb-single-${pkg.name}";
+      buildInputs = [
+        pkgs.fpm
+      ];
+
+      unpackPhase = "true";
+
+      buildPhase = ''
+        export HOME=$PWD
+        mkdir -p ./nix/store/
+        for item in "$(cat ${pkgs.referencesByPopularity pkg})"
+        do
+          cp -r $item ./nix/store/
+        done
+
+        mkdir -p ./bin
+        cp -r ${pkg}/bin/* ./bin/
+
+        mkdir -p ./etc
+        cp -r ${pkg}/etc/* ./etc/
+
+        chmod -R a+rwx ./nix
+        chmod -R a+rwx ./bin
+        chmod -R a+rwx ./etc
+        fpm -s dir -t deb --name ${pkg.name} nix bin etc
+      '';
+
+      installPhase = ''
+        mkdir -p $out
+        cp -r *.deb $out
+      '';
+    };
+
     apps = {
       docs = {
         type = "app";
         program = builtins.toString (pkgs.writeScript "docs" ''
           ${pkgs.python3}/bin/python3 -m http.server --directory ${self.packages."${system}".docs}/share/doc'');
+      };
+
+      exportDEB = {
+        type = "app";
+        program = builtins.toString (pkgs.writeScript "docs" ''
+          ${pkgs.nix}/bin/nix bundle --bundler .#bundlers.${system}.gokillDeb .#packages.${system}.gokill'');
       };
     };
 
@@ -90,12 +143,6 @@
                   duration =  10;
                 };
                 actions = [
-                  {
-                    type = "Shutdown";
-                    options = {
-                    };
-                    stage = 2;
-                  }
                 ];
               }
             ];
@@ -103,7 +150,6 @@
             virtualisation.vmVariant.virtualisation.graphics = false;
           }
         ];
-
       };
     in
     nixos.config.system.build.vm;
