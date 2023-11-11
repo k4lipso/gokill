@@ -1,7 +1,7 @@
 # gokill
 
-
-gokill is designed for activists, journalists, and individuals who require robust protection for their data, ensuring it remains inaccessible under any circumstances. It belongs to the category of anti-forensic tools, providing a means to safeguard against potential repression. gokill is a [software dead man's switch](https://en.wikipedia.org/wiki/Dead_man%27s_switch#Software) that empowers users to configure various events. If these events occur, they trigger predefined actions. It is specifically crafted for worst-case scenarios, such as when intruders gain physical access to a device. In these intense situations, gokill automatically performs tasks to enhance your security:
+gokill is a [software dead man's switch](https://en.wikipedia.org/wiki/Dead_man%27s_switch#Software) that empowers users to configure various events. If these events occur, they trigger predefined actions.
+The tool is designed for activists, journalists, and individuals who require robust protection for their data, ensuring it remains inaccessible under any circumstances. It belongs to the category of anti-forensic tools, providing a means to safeguard against potential repression. It is specifically crafted for worst-case scenarios, such as when intruders gain physical access to a device. In these intense situations, gokill can automatically perform tasks to enhance your security. Those could be:
 - locking the screen 
 - sending chat messages
 - deleting data
@@ -9,18 +9,28 @@ gokill is designed for activists, journalists, and individuals who require robus
 - destroying encrypted partitions
 - ect
 
+#### documentation
+A full list of Triggers and Actions with all their configuration options can be found here: 
+
 ## usage
+If you use NixOS gokill can easily be integrated into your system configuration - scroll down for more info on that.  
+
+For all other linux distributions gokill currently needs to be built and setup manually. This is supposed to change.
+Iam currently working/researching on publishing gokill as [ppa](https://help.launchpad.net/Packaging/PPA) and as snap.
+If you have other recommendations let me know.  
+
 
 ``` bash
 # Clone the gokill repository
 git clone https://github.com/k4lipso/gokill
 cd gokill
 
-# Build gokill
+# Build gokill - requires libolm
 go build github.com/k4lipso/gokill
 
 # Create a config.json and run gokill
 ./gokill -c config.json
+# Running gokill manually is annoying, it is acutally meant to run as systemd unit.
 ```
 
 ## Config Example
@@ -78,9 +88,10 @@ actions that will be executed once triggered.
 ```
 
 ## nix support
-
 gokill enjoys full nix support. gokill exposes a nix flakes that outputs a gokill package, a nixosModule and more.
 That means you can super easily incorporate gokill into your existing nixosConfigurations. 
+
+### NixOS Module
 Here is a small example config:
 
 ``` nix
@@ -109,23 +120,17 @@ Here is a small example config:
 
 This will automatically configure and enable a systemd running gokill as root user in the background
 
-## --
+### Build Documentation locally
 
-the tasks gokill executes could be done by hand using shellscripts, cronjobs, daemons ect.
-but that means everyone needs to figure it out for themselves, and eventually make mistakes.
-the idea of gokill is to provide a wide variarity of possibilities out of the box while making sure they are well tested
-and relatively easy to setup.
+``` bash
+nix run github:k4lipso/gokill#docs
+```
 
----
+### Run integrations tests
 
-actions and triggers should be easy to extend and handled like plugins. they
-also should be self documenting.
-every action and trigger should be testable at anytime as a 'dry-run'.
-actions can have a 'stage' defined. the lowest stage is started first,
-and only when all actions on that stage are finished next stage is triggered
-
-gokill should run as daemon. config should be read from /etc/somename/config.json
-
+``` bash
+nix flake check github:k4lipso/gokill
+```
 
 ## todos
 
