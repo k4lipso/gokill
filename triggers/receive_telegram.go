@@ -36,7 +36,7 @@ func (s ReceiveTelegram) Listen() {
 	for update := range updates {
 		if update.Message != nil { // If we got a message
 			if(update.Message.Chat.ID != chatId) {
-				internal.LogDoc(s).Debugf("ReceiveTelegram received wrong ChatId. Got %s, wanted %s", update.Message.Chat.ID, s.ChatId)
+				internal.LogDoc(s).Debugf("ReceiveTelegram received wrong ChatId. Got %d, wanted %d", update.Message.Chat.ID, s.ChatId)
 				continue	
 			}
 
@@ -50,7 +50,6 @@ func (s ReceiveTelegram) Listen() {
 		}
 	}
 }
-
 
 
 func CreateReceiveTelegram(config internal.KillSwitchConfig) (ReceiveTelegram, error) {
