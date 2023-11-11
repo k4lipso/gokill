@@ -121,6 +121,7 @@ func GetAllActions() []DocumentedAction {
 	return []DocumentedAction{
 		Command{},
 		Printer{},
+		RemoveFiles{},
 		ShellScript{},
 		Shutdown{},
 		SendMatrix{},
