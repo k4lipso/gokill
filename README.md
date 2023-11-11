@@ -1,40 +1,37 @@
 # gokill
 
-gokill is aimed at activists, journalists and others that need to protect their data against access under all circumstances.
-gokill falls under the category of anti-forensic tools, helping you to protect yourself against repression.
-It is built for worst case scenarios when intruders physical gaining access to a device.
-In such heated situations gokill helps you automatically executing tasks like:
+
+gokill is designed for activists, journalists, and individuals who require robust protection for their data, ensuring it remains inaccessible under any circumstances. It belongs to the category of anti-forensic tools, providing a means to safeguard against potential repression. gokill is a [software dead man's switch](https://en.wikipedia.org/wiki/Dead_man%27s_switch#Software) that empowers users to configure various events. If these events occur, they trigger predefined actions. It is specifically crafted for worst-case scenarios, such as when intruders gain physical access to a device. In these intense situations, gokill automatically performs tasks to enhance your security:
 - locking the screen 
-- sending a chat message
+- sending chat messages
 - deleting data
 - encrypting partitions 
 - destroying encrypted partitions
-- and many more
+- ect
 
-the tasks gokill executes could be done by hand using shellscripts, cronjobs, daemons ect.
-but that means everyone needs to figure it out for themselves, and eventually make mistakes.
-the idea of gokill is to provide a wide variarity of possibilities out of the box while making sure they are well tested.
+## usage
 
-gokill aims to be highly configurable and easily extendable.
+``` bash
+# Clone the gokill repository
+git clone https://github.com/k4lipso/gokill
+cd gokill
 
-'gokill' is a tool that completes some actions when a certain event occurs.
-actions can vary from shuting down the machine to sending mails over erasing data.
-actions can be triggert by certain conditions like specific outcomes of unix
-comands or not having internet connection.
+# Build gokill
+go build github.com/k4lipso/gokill
 
-actions and triggers should be easy to extend and handled like plugins. they
-also should be self documenting.
-every action and trigger should be testable at anytime as a 'dry-run'.
-actions can have a 'stage' defined. the lowest stage is started first,
-and only when all actions on that stage are finished next stage is triggered
-
-gokill should run as daemon. config should be read from /etc/somename/config.json
+# Create a config.json and run gokill
+./gokill -c config.json
+```
 
 ## Config Example
+
+gokill is configured using a json file. it consists of a list of triggers, where each of the triggers as a list of 
+actions that will be executed once triggered.
+
 ``` json
 [ //list of triggers
     {
-		"type": "UsbDisconnect",
+		"type": "UsbDisconnect", //triggers when the given device is disconnected
 		"name": "First Trigger",
 		"options": {
 			"deviceId": "ata-Samsung_SSD_860_EVO_1TB_S4AALKWJDI102",
@@ -72,7 +69,7 @@ gokill should run as daemon. config should be read from /etc/somename/config.jso
             {
                 "name": "unixCommand",
                 "options": {
-                    "command": "env DISPLAY=:0 sudo su -c i3lock someUser"
+                    "command": "env DISPLAY=:0 sudo su -c i3lock someUser" //example of locking someUser's screen as root
                 }
             }
         ]
@@ -112,25 +109,54 @@ Here is a small example config:
 
 This will automatically configure and enable a systemd running gokill as root user in the background
 
-## actions
+## --
+
+the tasks gokill executes could be done by hand using shellscripts, cronjobs, daemons ect.
+but that means everyone needs to figure it out for themselves, and eventually make mistakes.
+the idea of gokill is to provide a wide variarity of possibilities out of the box while making sure they are well tested
+and relatively easy to setup.
+
+---
+
+actions and triggers should be easy to extend and handled like plugins. they
+also should be self documenting.
+every action and trigger should be testable at anytime as a 'dry-run'.
+actions can have a 'stage' defined. the lowest stage is started first,
+and only when all actions on that stage are finished next stage is triggered
+
+gokill should run as daemon. config should be read from /etc/somename/config.json
+
+
+## todos
+
+- export snap
+- export ppa
+
+### actions
 - [x] shutdown
 - [ ] wipe ram
-- [ ] send mail
+- [ ] ~~send mail~~
+- send chat message
+    - [x] telegram
+    - [x] matrix
 - [ ] delete data
 - [ ] shred area
-- [x] random command
+- [x] run command
 - [ ] wordpress post
 - [ ] ipfs command
-- [ ] [buskill 'triggers'](https://github.com/BusKill/awesome-buskill-triggers)
+- [buskill 'triggers'](https://github.com/BusKill/awesome-buskill-triggers)
     - [x] [lock-screen](https://github.com/BusKill/buskill-linux/tree/master/triggers)
     - [x] shutdown
     - [ ] luks header shredder
     - [ ] veracrypt self-destruct
 
-## Triggers
+### triggers
 - [ ] no internet
 - [x] [pull usb stick](https://github.com/deepakjois/gousbdrivedetector/blob/master/usbdrivedetector_linux.go)
 - [x] ethernet unplugged
+- receive specific chat message
+    - [x] telegram
+    - [ ] matrix
 - [ ] power adapter disconnected
 - [ ] unix command
 - anyOf
