@@ -2,6 +2,7 @@
 .envrc
 result
 example.json
-./gokill
+gokill
 output.md
 thoughts.md
+deb-single*
