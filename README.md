@@ -46,7 +46,7 @@ actions that will be executed once triggered.
 		"options": {
 			"deviceId": "ata-Samsung_SSD_860_EVO_1TB_S4AALKWJDI102",
 			"waitTillConnected": true //only trigger when usb drive was actually attached before
-		}
+		},
         "actions": [ //list of actions that will be executed when triggered
             {
                 "name": "unixCommand",
@@ -56,17 +56,15 @@ actions that will be executed once triggered.
                 "stage": 2 // defines the order in which actions are triggered.
             },
             {
-                "type": "sendMail",
-                "options": {
-                    "smtpserver": "domain.org",
-                    "port": 667,
-                    "recipients": [ "mail1@host.org", "mail2@host.org" ],
-                    "message": "kill switch was triggered",
-                    "attachments": [ "/path/atachments" ],
-                    "pubkeys": "/path/to/keys.pub"
-                },
+		        "type": "SendTelegram",
+		        "options": {
+		        	"token": "3345823487:FFGdEFxc1pA18d02Akslw-lkwjdA92KAH2",
+		        	"chatId": -832325872,
+		        	"message": "attention, intruders got my device!",
+		        	"testMessage": "this is just a test, no worries"
+		        },
                 "stage": 1 //this event is triggered first, then the shutdown
-            },
+            }
         ]
     },
     {
@@ -74,7 +72,7 @@ actions that will be executed once triggered.
 		"name": "Second Trigger",
 		"options": {
 			"interfaceName": "eth0",
-		}
+		},
         "actions": [
             {
                 "name": "unixCommand",
