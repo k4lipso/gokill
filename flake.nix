@@ -27,19 +27,9 @@
     };
 
     packages = rec {
-      gokill = pkgs.buildGoModule rec {
-        pname = "gokill";
-        version = "1.0";
-        vendorHash = currentVendorHash;
-        src = ./.;
-
-        buildInputs = [
-          pkgs.olm
-        ];
-
-        postInstall = ''
-          cp -r ./etc $out/ #for .deb packages
-          '';
+      gokill = import ./default.nix { 
+        pkgs = pkgs; 
+        currentVendorHash = currentVendorHash; 
       };
 
       gokill-docbuilder = pkgs.buildGoModule rec {
@@ -71,7 +61,6 @@
       docs = pkgs.callPackage (import ./docs/default.nix) { self = self; };
 
       default = self.packages.${system}.gokill;
-
     };
 
     bundlers.gokillDeb = pkg: pkgs.stdenv.mkDerivation {
@@ -82,7 +71,16 @@
 
       unpackPhase = "true";
 
-      buildPhase = ''
+      buildPhase = let
+        controlfile = pkgs.writeText "controlFile" ''
+          Package: gokill
+          Version: 1.0
+          Architecture: amd64
+          Maintainer: kalipso@c3d2.de
+          Description: A program that does stuff
+           You can add a longer description here. Mind the space at the beginning of this paragraph.
+        '';
+      in ''
         export HOME=$PWD
         mkdir -p ./nix/store/
         for item in "$(cat ${pkgs.referencesByPopularity pkg})"
@@ -96,10 +94,16 @@
         mkdir -p ./etc
         cp -r ${pkg}/etc/* ./etc/
 
+        mkdir -p ./DEBIAN/
+        cp ${controlfile} ./DEBIAN/control
+
         chmod -R a+rwx ./nix
         chmod -R a+rwx ./bin
-        chmod -R a+rwx ./etc
-        fpm -s dir -t deb --name ${pkg.name} nix bin etc
+        chmod -R 700 ./etc
+        chmod -R a+rwx ./DEBIAN
+
+        fpm -s dir -t deb --deb-systemd ./etc/systemd/system/gokill.service \
+          --deb-custom-control ./DEBIAN/control --name ${pkg.name} nix bin etc 
       '';
 
       installPhase = ''
@@ -117,9 +121,18 @@
 
       exportDEB = {
         type = "app";
-        program = builtins.toString (pkgs.writeScript "docs" ''
+        program = builtins.toString (pkgs.writeScript "exportdeb" ''
           ${pkgs.nix}/bin/nix bundle --bundler .#bundlers.${system}.gokillDeb .#packages.${system}.gokill'');
       };
+
+      #debianVM = let
+      #  vm = pkgs.vmTools.diskImageFuns.debian11x86_64 {
+      #    extraPackages = [ "dpkg" ];
+      #  };
+      #in {
+      #  type = "app";
+      #  program = builtins.toString (pkgs.vmTools.makeImageTestScript vm);
+      #};
     };
 
   })) ({
