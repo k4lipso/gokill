@@ -1,0 +1,7 @@
+[Unit]
+Description=gokill daemon
+
+[Service]
+ExecStart=gokill -c /etc/gokill/config.json
+Restart=on-failure
+Type=simple
