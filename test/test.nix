@@ -33,7 +33,7 @@
     start_all() # wait for our service to start
     node1.wait_for_unit("gokill")
     time.sleep(4)
-    output = node1.succeed("journalctl -u gokill.service | tail -n 2 | head -n 1")
+    output = node1.succeed("journalctl -u gokill.service | tail -n 20")
     # Check if our webserver returns the expected result
     assert "hello world" in output
   '';
