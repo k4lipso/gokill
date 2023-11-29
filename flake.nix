@@ -121,7 +121,10 @@
         inherit self;
       };
     in {
-      gokill = import ./test/test.nix checkArgs;
+      gokillBaseTest = import ./test/test.nix checkArgs;
+      gokillRemoveFilesTest = import ./test/remove_files_test.nix {
+        pkgs = nixpkgs.legacyPackages.x86_64-linux; 
+      } checkArgs;
     };
   }) ;
 }

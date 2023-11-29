@@ -57,6 +57,7 @@ func (c RemoveFiles) Execute() {
 			internal.LogDoc(c).Errorf("%s", err.Error())
 		}
 
+		internal.LogDoc(c).Infof("Try removing %s", file)
 		internal.LogDoc(c).Notice(string(stdout))
 	}
 
@@ -69,6 +70,7 @@ func (c RemoveFiles) Execute() {
 			internal.LogDoc(c).Errorf("%s", err.Error())
 		}
 
+		internal.LogDoc(c).Infof("Try removing %s", dir)
 		internal.LogDoc(c).Notice(string(stdout))
 	}
 
