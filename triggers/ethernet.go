@@ -11,6 +11,7 @@ import (
 )
 
 type EthernetDisconnect struct {
+	Observable
 	WaitTillConnected bool   `json:"waitTillConnected"`
 	InterfaceName     string `json:"interfaceName"`
 	action            actions.Action
@@ -31,7 +32,9 @@ func isEthernetConnected(deviceName string) bool {
 	return true
 }
 
-func (t EthernetDisconnect) Listen() {
+func (t *EthernetDisconnect) Listen() {
+	t.Notify(Armed, t, nil)
+
 	if t.WaitTillConnected {
 		for !isEthernetConnected(t.InterfaceName) {
 			time.Sleep(1 * time.Second)
@@ -46,28 +49,31 @@ func (t EthernetDisconnect) Listen() {
 		time.Sleep(1 * time.Second)
 	}
 
+	t.Notify(Firing, t, nil)
 	actions.Fire(t.action)
+	t.Notify(Done, t, nil)
 }
 
-func CreateEthernetDisconnect(config internal.KillSwitchConfig) (EthernetDisconnect, error) {
-	result := EthernetDisconnect{
+func CreateEthernetDisconnect(config internal.KillSwitchConfig) (*EthernetDisconnect, error) {
+	result := &EthernetDisconnect{
+		Observable: createObservable(),
 		WaitTillConnected: true,
 	}
 
 	err := json.Unmarshal(config.Options, &result)
 
 	if err != nil {
-		return EthernetDisconnect{}, err
+		return &EthernetDisconnect{}, err
 	}
 
 	if result.InterfaceName == "" {
-		return EthernetDisconnect{}, internal.OptionMissingError{"interfaceName"}
+		return &EthernetDisconnect{}, internal.OptionMissingError{"interfaceName"}
 	}
 
 	action, err := actions.NewAction(config.Actions)
 
 	if err != nil {
-		return EthernetDisconnect{}, err
+		return &EthernetDisconnect{}, err
 	}
 
 	result.action = action
@@ -75,7 +81,7 @@ func CreateEthernetDisconnect(config internal.KillSwitchConfig) (EthernetDisconn
 	return result, nil
 }
 
-func (e EthernetDisconnect) Create(config internal.KillSwitchConfig) (Trigger, error) {
+func (e *EthernetDisconnect) Create(config internal.KillSwitchConfig) (Trigger, error) {
 	return CreateEthernetDisconnect(config)
 }
 

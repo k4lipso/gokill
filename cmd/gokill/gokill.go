@@ -36,6 +36,25 @@ func GetDocumentation() string {
 	return result
 }
 
+func Observe(c triggers.TriggerUpdateChan) {
+	for update := range c {
+		switch update.State {
+			case triggers.Initialized:
+				internal.Log.Debugf("Trigger %s initialized", update.Trigger.GetName())
+			case triggers.Armed:
+				internal.Log.Debugf("Trigger %s armed", update.Trigger.GetName())
+			case triggers.Firing:
+				internal.Log.Debugf("Trigger %s firing", update.Trigger.GetName())
+			case triggers.Failed:
+				internal.Log.Debugf("Trigger %s failed. Reason: %s", update.Trigger.GetName(), update.Error)
+			case triggers.Done:
+				internal.Log.Debugf("Trigger %s done", update.Trigger.GetName())
+				internal.Log.Infof("Restarting Trigger %s", update.Trigger.GetName())
+				go update.Trigger.Listen()
+		}
+	}
+}
+
 func main() {
 
 	configFilePath := flag.String("c", "", "path to config file")
@@ -75,6 +94,9 @@ func main() {
 		return
 	}
 
+	triggerUpdateChan := make(triggers.TriggerUpdateChan)
+	go Observe(triggerUpdateChan)
+
 	var triggerList []triggers.Trigger
 	for _, cfg := range f {
 		trigger, err := triggers.NewTrigger(cfg)
@@ -84,8 +106,11 @@ func main() {
 			return
 		}
 
-		trigger.Listen() //TODO: not block here
+		trigger.Attach(triggerUpdateChan)
+
+		go trigger.Listen() //TODO: not block here
 		triggerList = append(triggerList, trigger)
 	}
 
+	select{}
 }

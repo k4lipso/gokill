@@ -8,33 +8,42 @@ import (
 )
 
 type TimeOut struct {
+	Observable
 	Duration int
 	action   actions.Action
 }
 
-func (t TimeOut) Listen() {
+func (t *TimeOut) Listen() {
+	t.Notify(Armed, t, nil)
 	internal.LogDoc(t).Info("TimeOut listens")
 	internal.LogDoc(t).Infof("%d", t.Duration)
 	time.Sleep(time.Duration(t.Duration) * time.Second)
 	internal.LogDoc(t).Notice("TimeOut fires")
+
+	t.Notify(Firing, t, nil)
 	actions.Fire(t.action)
+	t.Notify(Done, t, nil)
 }
 
-func (t TimeOut) Create(config internal.KillSwitchConfig) (Trigger, error) {
-	var result TimeOut
+func (t *TimeOut) Create(config internal.KillSwitchConfig) (Trigger, error) {
+	result := &TimeOut{
+		Observable: createObservable(),
+	}
+
 	err := json.Unmarshal(config.Options, &result)
 
 	if err != nil {
-		return TimeOut{}, err
+		return result, err
 	}
 
 	action, err := actions.NewAction(config.Actions)
 
 	if err != nil {
-		return TimeOut{}, err
+		return result, err
 	}
 
 	result.action = action
+
 	return result, nil
 }
 

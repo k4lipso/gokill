@@ -6,7 +6,61 @@ import (
 	"github.com/k4lipso/gokill/internal"
 )
 
+type TriggerState int8
+
+const (
+  Initialized TriggerState = iota
+	Test
+	Armed
+	Firing
+	Failed
+	Done
+)
+
+type TriggerUpdate struct {
+	State   TriggerState
+	Trigger DocumentedTrigger
+	Error   error
+}
+
+type TriggerUpdateChan chan TriggerUpdate
+
+type Observable struct {
+	NotificationChan []TriggerUpdateChan
+}
+
+func (o *Observable) Attach(Chan TriggerUpdateChan) {
+	o.NotificationChan = append(o.NotificationChan, Chan)
+}
+
+func (o Observable) Notify(state TriggerState, trigger DocumentedTrigger, Error error) {
+	o.NotifyUpdate(TriggerUpdate{ state, trigger, Error, })
+}
+
+func (o Observable) NotifyUpdate(update TriggerUpdate) {
+	for _, Chan := range o.NotificationChan {
+		Chan <- update
+	}
+}
+
+func (o Observable) GetLen() int {
+	return len(o.NotificationChan)
+}
+
+func createObservable() Observable {
+	return Observable {
+		NotificationChan: []TriggerUpdateChan{},
+	}
+}
+
+type Observabler interface {
+	Attach(TriggerUpdateChan)
+	Notify(TriggerState, DocumentedTrigger, error)
+	GetLen() int
+}
+
 type Trigger interface {
+	Observabler
 	Listen()
 	Create(internal.KillSwitchConfig) (Trigger, error)
 }
@@ -28,10 +82,10 @@ func NewTrigger(config internal.KillSwitchConfig) (Trigger, error) {
 
 func GetAllTriggers() []DocumentedTrigger {
 	return []DocumentedTrigger{
-		EthernetDisconnect{},
-		ReceiveTelegram{},
-		TimeOut{},
-		UsbDisconnect{},
+		&EthernetDisconnect{},
+		&ReceiveTelegram{},
+		&TimeOut{},
+		&UsbDisconnect{},
 	}
 }
 

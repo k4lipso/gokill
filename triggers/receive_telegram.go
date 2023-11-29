@@ -11,17 +11,20 @@ import (
 )
 
 type ReceiveTelegram struct {
+	Observable
 	Token string `json:"token"`
 	ChatId int64 `json:"chatId"`
 	Message string `json:"message"`
 	action actions.Action
 }
 
-func (s ReceiveTelegram) Listen() {
+func (s *ReceiveTelegram) Listen() {
+	s.Notify(Armed, s, nil)
 	bot, err := tgbotapi.NewBotAPI(s.Token)
 
 	if err != nil {
-		return //fmt.Errorf("ReceiveTelegram waitForMessage error: %s", err)
+		s.Notify(Failed, s, fmt.Errorf("ReceiveTelegram waitForMessage error: %s", err))
+		return
 	}
 
 	bot.Debug = false
@@ -46,39 +49,44 @@ func (s ReceiveTelegram) Listen() {
 			}
 
 			internal.LogDoc(s).Info("ReceiveTelegram received secret message")
+			s.Notify(Firing, s, nil)
 			actions.Fire(s.action)
+			break
 		}
 	}
+
+	s.Notify(Done, s, nil)
 }
 
 
-func CreateReceiveTelegram(config internal.KillSwitchConfig) (ReceiveTelegram, error) {
-	result := ReceiveTelegram{
+func CreateReceiveTelegram(config internal.KillSwitchConfig) (*ReceiveTelegram, error) {
+	result := &ReceiveTelegram{
+		Observable: createObservable(),
 		ChatId: 0,
 	}
 
 	err := json.Unmarshal(config.Options, &result)
 
 	if err != nil {
-		return ReceiveTelegram{}, fmt.Errorf("Error during CreateReceiveTelegram: %s", err)
+		return &ReceiveTelegram{}, fmt.Errorf("Error during CreateReceiveTelegram: %s", err)
 	}
 
 	if result.Token == "" {
-		return ReceiveTelegram{}, internal.OptionMissingError{"token"}
+		return &ReceiveTelegram{}, internal.OptionMissingError{"token"}
 	}
 
 	if result.ChatId == 0 {
-		return ReceiveTelegram{}, internal.OptionMissingError{"chadId"}
+		return &ReceiveTelegram{}, internal.OptionMissingError{"chadId"}
 	}
 
 	if result.Message == "" {
-		return ReceiveTelegram{}, internal.OptionMissingError{"message"}
+		return &ReceiveTelegram{}, internal.OptionMissingError{"message"}
 	}
 
 	action, err := actions.NewAction(config.Actions)
 
 	if err != nil {
-		return ReceiveTelegram{}, fmt.Errorf("Error during CreateReceiveTelegram: %s", err)
+		return &ReceiveTelegram{}, fmt.Errorf("Error during CreateReceiveTelegram: %s", err)
 	}
 
 	result.action = action
@@ -86,7 +94,7 @@ func CreateReceiveTelegram(config internal.KillSwitchConfig) (ReceiveTelegram, e
 	return result, nil
 }
 
-func (e ReceiveTelegram) Create(config internal.KillSwitchConfig) (Trigger, error) {
+func (e *ReceiveTelegram) Create(config internal.KillSwitchConfig) (Trigger, error) {
 	return CreateReceiveTelegram(config)
 }
 

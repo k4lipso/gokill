@@ -11,6 +11,7 @@ import (
 )
 
 type UsbDisconnect struct {
+	Observable
 	WaitTillConnected bool   `json:"waitTillConnected"`
 	DeviceName        string `json:"deviceName"`
 	action            actions.Action
@@ -28,7 +29,8 @@ func isUsbConnected(deviceName string) bool {
 	return true
 }
 
-func (t UsbDisconnect) Listen() {
+func (t *UsbDisconnect) Listen() {
+	t.Notify(Armed, t, nil)
 	if t.WaitTillConnected {
 		for !isUsbConnected(t.DeviceName) {
 			time.Sleep(1 * time.Second)
@@ -46,28 +48,31 @@ func (t UsbDisconnect) Listen() {
 		time.Sleep(1 * time.Second)
 	}
 
+	t.Notify(Firing, t, nil)
 	actions.Fire(t.action)
+	t.Notify(Done, t, nil)
 }
 
-func CreateUsbDisconnect(config internal.KillSwitchConfig) (UsbDisconnect, error) {
-	result := UsbDisconnect{
+func CreateUsbDisconnect(config internal.KillSwitchConfig) (*UsbDisconnect, error) {
+	result := &UsbDisconnect{
+		Observable: createObservable(),
 		WaitTillConnected: true,
 	}
 
 	err := json.Unmarshal(config.Options, &result)
 
 	if err != nil {
-		return UsbDisconnect{}, err
+		return result, err
 	}
 
 	if result.DeviceName == "" {
-		return UsbDisconnect{}, internal.OptionMissingError{"deviceName"}
+		return result, internal.OptionMissingError{"deviceName"}
 	}
 
 	action, err := actions.NewAction(config.Actions)
 
 	if err != nil {
-		return UsbDisconnect{}, err
+		return result, err
 	}
 
 	result.action = action
@@ -75,7 +80,7 @@ func CreateUsbDisconnect(config internal.KillSwitchConfig) (UsbDisconnect, error
 	return result, nil
 }
 
-func (e UsbDisconnect) Create(config internal.KillSwitchConfig) (Trigger, error) {
+func (e *UsbDisconnect) Create(config internal.KillSwitchConfig) (Trigger, error) {
 	return CreateUsbDisconnect(config)
 }
 
