@@ -1,12 +1,12 @@
 # gokill
 
-gokill is a [software dead man's switch](https://en.wikipedia.org/wiki/Dead_man%27s_switch#Software) that empowers users to configure various events. If these events occur, they trigger predefined actions.
+gokill is a [software dead man's switch](https://en.wikipedia.org/wiki/Dead_man%27s_switch#Software).
 The tool is designed for activists, journalists, and individuals who require robust protection for their data, ensuring it remains inaccessible under any circumstances. It belongs to the category of anti-forensic tools, providing a means to safeguard against potential repression. It is specifically crafted for worst-case scenarios, such as when intruders gain physical access to a device. In these intense situations, gokill can automatically perform tasks to enhance your security. Those could be:
-- locking the screen 
-- sending chat messages
 - deleting data
+- sending chat messages
 - encrypting partitions 
 - destroying encrypted partitions
+- locking the screen 
 - ect
 
 #### documentation
