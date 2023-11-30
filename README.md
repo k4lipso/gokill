@@ -9,7 +9,7 @@ gokill is a [software dead man's switch](https://en.wikipedia.org/wiki/Dead_man%
 - ect
 
 #### documentation
-A full list of Triggers and Actions with all their configuration options can be found here: 
+A full list of Triggers and Actions with all their configuration options can be found here: https://k4lipso.github.io/gokill/
 
 ## usage
 If you use NixOS gokill can easily be integrated into your system configuration - scroll down for more info on that.  
