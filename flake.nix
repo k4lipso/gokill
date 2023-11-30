@@ -120,11 +120,12 @@
         pkgs = nixpkgs.legacyPackages."x86_64-linux";
         inherit self;
       };
+
+      pkgs = { pkgs = nixpkgs.legacyPackages.x86_64-linux; };
     in {
       gokillBaseTest = import ./test/test.nix checkArgs;
-      gokillRemoveFilesTest = import ./test/remove_files_test.nix {
-        pkgs = nixpkgs.legacyPackages.x86_64-linux; 
-      } checkArgs;
+      gokillRemoveFilesTest = import ./test/remove_files_test.nix pkgs checkArgs;
+      gokillShellScriptTest = import ./test/shell_script_test.nix pkgs checkArgs;
     };
   }) ;
 }
