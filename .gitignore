@@ -1,3 +1,5 @@
+.nixos-test-history
+*.bak
 *.qcow2
 .envrc
 result
