@@ -1,7 +1,6 @@
 # gokill
 
-gokill is a [software dead man's switch](https://en.wikipedia.org/wiki/Dead_man%27s_switch#Software).
-The tool is designed for activists, journalists, and individuals who require robust protection for their data, ensuring it remains inaccessible under any circumstances. It belongs to the category of anti-forensic tools, providing a means to safeguard against potential repression. It is specifically crafted for worst-case scenarios, such as when intruders gain physical access to a device. In these intense situations, gokill can automatically perform tasks to enhance your security. Those could be:
+gokill is a [software dead man's switch](https://en.wikipedia.org/wiki/Dead_man%27s_switch#Software). It belongs to the category of anti-forensic tools, providing a means to safeguard against potential repression. It is specifically crafted for worst-case scenarios, such as when intruders gain physical access to a device. In these intense situations, gokill can automatically perform tasks to enhance your security. Those could be:
 - deleting data
 - sending chat messages
 - encrypting partitions 
