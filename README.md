@@ -25,7 +25,7 @@ git clone https://github.com/k4lipso/gokill
 cd gokill
 
 # Build gokill - requires libolm
-go build github.com/k4lipso/gokill
+go build cmd/gokill/gokill.go
 
 # Create a config.json and run gokill
 ./gokill -c config.json
