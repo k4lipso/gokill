@@ -12,7 +12,7 @@
             type = "Timeout";
             name = "custom timeout";
             options = {
-              duration =  3;
+              duration =  10;
             };
             actions = [
               {
@@ -86,7 +86,7 @@
     for name in filenames:
       node1.succeed("test -e " + name + " && (exit 0) || (exit 1)")
 
-    time.sleep(15)
+    time.sleep(20)
     run("ls -la /tmp")
 
     for name in filenames:
