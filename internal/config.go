@@ -21,6 +21,7 @@ type ActionConfig struct {
 
 type KillSwitchConfig struct {
 	Name    string          `json:"name"`
+	Loop    bool            `json:"loop"`
 	Type    string          `json:"type"`
 	Options json.RawMessage `json:"options"`
 	Actions []ActionConfig  `json:"actions"`

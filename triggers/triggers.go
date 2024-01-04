@@ -70,14 +70,38 @@ type DocumentedTrigger interface {
 	Trigger
 }
 
-func NewTrigger(config internal.KillSwitchConfig) (Trigger, error) {
+type TriggerHandler struct {
+	Observable
+	Name string
+	Loop bool
+	WrappedTrigger Trigger
+}
+
+func NewTriggerHandler(config internal.KillSwitchConfig) TriggerHandler {
+	return TriggerHandler{
+		Observable: createObservable(),
+		Name: config.Name,
+		Loop: config.Loop,
+	}
+}
+
+func NewTrigger(config internal.KillSwitchConfig) (TriggerHandler, error) {
+	result := NewTriggerHandler(config)
+
 	for _, availableTrigger := range GetAllTriggers() {
 		if config.Type == availableTrigger.GetName() {
-			return availableTrigger.Create(config)
+			t, err := availableTrigger.Create(config)
+
+			if err != nil {
+				return TriggerHandler{}, fmt.Errorf("Could not create Trigger, reason: %s", err)
+			}
+
+			result.WrappedTrigger = t
+			return result, nil
 		}
 	}
 
-	return nil, fmt.Errorf("Error parsing config: Trigger with type %s does not exists", config.Type)
+	return TriggerHandler{}, fmt.Errorf("Error parsing config: Trigger with type %s does not exists", config.Type)
 }
 
 func GetAllTriggers() []DocumentedTrigger {
