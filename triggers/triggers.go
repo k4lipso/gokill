@@ -139,7 +139,7 @@ func NewTrigger(config internal.KillSwitchConfig) (*TriggerHandler, error) {
 		}
 	}
 
-	return nil, fmt.Errorf("Error parsing config: Trigger with type %s does not exists", config.Type)
+	return TriggerHandler{}, fmt.Errorf("Error parsing config: Trigger with type %s does not exists", config.Type)
 }
 
 func GetAllTriggers() []Trigger {
