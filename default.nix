@@ -2,7 +2,7 @@
 
 pkgs.buildGoModule rec {
   pname = "gokill";
-  version = "1.0";
+  version = "0.5";
   vendorHash = currentVendorHash;
   src = ./.;
 

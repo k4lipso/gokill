@@ -74,7 +74,7 @@
       buildPhase = let
         controlfile = pkgs.writeText "controlFile" ''
           Package: gokill
-          Version: 1.0
+          Version: 0.5
           Architecture: amd64
           Maintainer: kalipso@c3d2.de
           Description: A program that does stuff
