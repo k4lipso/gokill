@@ -100,6 +100,7 @@ func main() {
 	var triggerList []triggers.Trigger
 	for _, cfg := range f {
 		trigger, err := triggers.NewTrigger(cfg)
+		internal.Log.Infof("Registered trigger with name: %s", trigger.Name)
 
 		if err != nil {
 			internal.Log.Errorf("%s", err)
@@ -108,7 +109,7 @@ func main() {
 
 		trigger.Attach(triggerUpdateChan)
 
-		go trigger.Listen() //TODO: not block here
+		go trigger.Listen()
 		triggerList = append(triggerList, trigger)
 	}
 
