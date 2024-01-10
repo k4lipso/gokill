@@ -77,15 +77,29 @@ type TriggerHandler struct {
 	WrappedTrigger Trigger
 }
 
-func NewTriggerHandler(config internal.KillSwitchConfig) TriggerHandler {
-	return TriggerHandler{
+func NewTriggerHandler(config internal.KillSwitchConfig) *TriggerHandler {
+	return &TriggerHandler{
 		Observable: createObservable(),
 		Name: config.Name,
 		Loop: config.Loop,
 	}
 }
 
-func NewTrigger(config internal.KillSwitchConfig) (TriggerHandler, error) {
+func (t *TriggerHandler) Create(config internal.KillSwitchConfig) (Trigger, error) {
+	return NewTriggerHandler(config), nil
+}
+
+func (t *TriggerHandler) Listen() {
+	for {
+		t.WrappedTrigger.Listen()
+
+		if !t.Loop {
+			return
+		}
+	}
+}
+
+func NewTrigger(config internal.KillSwitchConfig) (*TriggerHandler, error) {
 	result := NewTriggerHandler(config)
 
 	for _, availableTrigger := range GetAllTriggers() {
@@ -93,7 +107,7 @@ func NewTrigger(config internal.KillSwitchConfig) (TriggerHandler, error) {
 			t, err := availableTrigger.Create(config)
 
 			if err != nil {
-				return TriggerHandler{}, fmt.Errorf("Could not create Trigger, reason: %s", err)
+				return nil, fmt.Errorf("Could not create Trigger, reason: %s", err)
 			}
 
 			result.WrappedTrigger = t
@@ -101,7 +115,7 @@ func NewTrigger(config internal.KillSwitchConfig) (TriggerHandler, error) {
 		}
 	}
 
-	return TriggerHandler{}, fmt.Errorf("Error parsing config: Trigger with type %s does not exists", config.Type)
+	return nil, fmt.Errorf("Error parsing config: Trigger with type %s does not exists", config.Type)
 }
 
 func GetAllTriggers() []DocumentedTrigger {
