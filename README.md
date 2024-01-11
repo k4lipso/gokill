@@ -141,6 +141,7 @@ nix flake check github:k4lipso/gokill
 - send chat message
     - [x] telegram
     - [x] matrix
+    - [ ] signal
 - [ ] delete data
 - [ ] shred area
 - [x] run command
@@ -159,6 +160,7 @@ nix flake check github:k4lipso/gokill
 - receive specific chat message
     - [x] telegram
     - [ ] matrix
+    - [ ] signal
 - [ ] power adapter disconnected
 - [ ] unix command
 - anyOf
