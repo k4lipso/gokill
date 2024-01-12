@@ -11,7 +11,6 @@ import (
 )
 
 type UsbDisconnect struct {
-	Observable
 	WaitTillConnected bool   `json:"waitTillConnected"`
 	DeviceName        string `json:"deviceName"`
 	action            actions.Action
@@ -29,8 +28,7 @@ func isUsbConnected(deviceName string) bool {
 	return true
 }
 
-func (t *UsbDisconnect) Listen() {
-	t.Notify(Armed, t, nil)
+func (t *UsbDisconnect) Listen() error {
 	if t.WaitTillConnected {
 		for !isUsbConnected(t.DeviceName) {
 			time.Sleep(1 * time.Second)
@@ -48,14 +46,15 @@ func (t *UsbDisconnect) Listen() {
 		time.Sleep(1 * time.Second)
 	}
 
-	t.Notify(Firing, t, nil)
+	return nil
+}
+
+func (t *UsbDisconnect) Fire() {
 	actions.Fire(t.action)
-	t.Notify(Done, t, nil)
 }
 
 func CreateUsbDisconnect(config internal.KillSwitchConfig) (*UsbDisconnect, error) {
 	result := &UsbDisconnect{
-		Observable: createObservable(),
 		WaitTillConnected: true,
 	}
 

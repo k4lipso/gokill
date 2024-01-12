@@ -49,8 +49,6 @@ func Observe(c triggers.TriggerUpdateChan) {
 				internal.Log.Debugf("Trigger %s failed. Reason: %s", update.Trigger.GetName(), update.Error)
 			case triggers.Done:
 				internal.Log.Debugf("Trigger %s done", update.Trigger.GetName())
-				internal.Log.Infof("Restarting Trigger %s", update.Trigger.GetName())
-				go update.Trigger.Listen()
 		}
 	}
 }
@@ -97,7 +95,7 @@ func main() {
 	triggerUpdateChan := make(triggers.TriggerUpdateChan)
 	go Observe(triggerUpdateChan)
 
-	var triggerList []triggers.Trigger
+	var triggerList []*triggers.TriggerHandler
 	for _, cfg := range f {
 		trigger, err := triggers.NewTrigger(cfg)
 		internal.Log.Infof("Registered trigger with name: %s", trigger.Name)
@@ -109,6 +107,7 @@ func main() {
 
 		trigger.Attach(triggerUpdateChan)
 
+		internal.Log.Infof("HAHA")
 		go trigger.Listen()
 		triggerList = append(triggerList, trigger)
 	}

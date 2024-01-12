@@ -61,15 +61,10 @@ type Observabler interface {
 
 type Trigger interface {
 	internal.Documenter
-	Observabler
-	Listen()
+	Listen() error
+	Fire()
 	Create(internal.KillSwitchConfig) (Trigger, error)
 }
-
-//type DocumentedTrigger interface {
-//	internal.Documenter
-//	Trigger
-//}
 
 type TriggerHandler struct {
 	Observable
@@ -102,14 +97,25 @@ func (t TriggerHandler)	GetOptions() []internal.ConfigOption {
 	return t.WrappedTrigger.GetOptions()
 }
 
-func (t *TriggerHandler) Create(config internal.KillSwitchConfig) (Trigger, error) {
+func (t *TriggerHandler) Create(config internal.KillSwitchConfig) (*TriggerHandler, error) {
 	return NewTriggerHandler(config), nil
 }
 
 func (t *TriggerHandler) Listen() {
 	for {
+		internal.Log.Infof("LISTEN()")
 		t.Notify(Armed, t.WrappedTrigger, nil)
-		t.WrappedTrigger.Listen()
+		err := t.WrappedTrigger.Listen()
+		internal.Log.Infof("DONELISTEN()")
+
+		if err != nil {
+			t.Notify(Failed, t.WrappedTrigger, err)
+			continue
+		}
+
+		t.Notify(Firing, t.WrappedTrigger, nil)
+		t.WrappedTrigger.Fire()
+		t.Notify(Done, t.WrappedTrigger, nil)
 
 		if !t.Loop {
 			return

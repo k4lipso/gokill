@@ -11,20 +11,17 @@ import (
 )
 
 type ReceiveTelegram struct {
-	Observable
 	Token string `json:"token"`
 	ChatId int64 `json:"chatId"`
 	Message string `json:"message"`
 	action actions.Action
 }
 
-func (s *ReceiveTelegram) Listen() {
-	s.Notify(Armed, s, nil)
+func (s *ReceiveTelegram) Listen() error {
 	bot, err := tgbotapi.NewBotAPI(s.Token)
 
 	if err != nil {
-		s.Notify(Failed, s, fmt.Errorf("ReceiveTelegram waitForMessage error: %s", err))
-		return
+		return err
 	}
 
 	bot.Debug = false
@@ -49,19 +46,19 @@ func (s *ReceiveTelegram) Listen() {
 			}
 
 			internal.LogDoc(s).Info("ReceiveTelegram received secret message")
-			s.Notify(Firing, s, nil)
-			actions.Fire(s.action)
 			break
 		}
 	}
 
-	s.Notify(Done, s, nil)
+	return nil
 }
 
+func (s *ReceiveTelegram) Fire() {
+	actions.Fire(s.action)
+}
 
 func CreateReceiveTelegram(config internal.KillSwitchConfig) (*ReceiveTelegram, error) {
 	result := &ReceiveTelegram{
-		Observable: createObservable(),
 		ChatId: 0,
 	}
 
