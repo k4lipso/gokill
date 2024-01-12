@@ -107,6 +107,7 @@ func main() {
 
 		trigger.Attach(triggerUpdateChan)
 
+		internal.Log.Infof("HAHA")
 		go trigger.Listen()
 		triggerList = append(triggerList, trigger)
 	}
