@@ -11,7 +11,6 @@ import (
 )
 
 type EthernetDisconnect struct {
-	Observable
 	WaitTillConnected bool   `json:"waitTillConnected"`
 	InterfaceName     string `json:"interfaceName"`
 	action            actions.Action
@@ -32,9 +31,7 @@ func isEthernetConnected(deviceName string) bool {
 	return true
 }
 
-func (t *EthernetDisconnect) Listen() {
-	t.Notify(Armed, t, nil)
-
+func (t *EthernetDisconnect) Listen() error {
 	if t.WaitTillConnected {
 		for !isEthernetConnected(t.InterfaceName) {
 			time.Sleep(1 * time.Second)
@@ -49,14 +46,16 @@ func (t *EthernetDisconnect) Listen() {
 		time.Sleep(1 * time.Second)
 	}
 
-	t.Notify(Firing, t, nil)
-	actions.Fire(t.action)
-	t.Notify(Done, t, nil)
+	return nil
 }
+
+func (t *EthernetDisconnect) Fire() {
+	actions.Fire(t.action)
+}
+
 
 func CreateEthernetDisconnect(config internal.KillSwitchConfig) (*EthernetDisconnect, error) {
 	result := &EthernetDisconnect{
-		Observable: createObservable(),
 		WaitTillConnected: true,
 	}
 
