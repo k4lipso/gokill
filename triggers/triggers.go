@@ -19,7 +19,7 @@ const (
 
 type TriggerUpdate struct {
 	State   TriggerState
-	Trigger DocumentedTrigger
+	Trigger Trigger
 	Error   error
 }
 
@@ -33,7 +33,7 @@ func (o *Observable) Attach(Chan TriggerUpdateChan) {
 	o.NotificationChan = append(o.NotificationChan, Chan)
 }
 
-func (o Observable) Notify(state TriggerState, trigger DocumentedTrigger, Error error) {
+func (o Observable) Notify(state TriggerState, trigger Trigger, Error error) {
 	o.NotifyUpdate(TriggerUpdate{ state, trigger, Error, })
 }
 
@@ -55,20 +55,21 @@ func createObservable() Observable {
 
 type Observabler interface {
 	Attach(TriggerUpdateChan)
-	Notify(TriggerState, DocumentedTrigger, error)
+	Notify(TriggerState, Trigger, error)
 	GetLen() int
 }
 
 type Trigger interface {
+	internal.Documenter
 	Observabler
 	Listen()
 	Create(internal.KillSwitchConfig) (Trigger, error)
 }
 
-type DocumentedTrigger interface {
-	internal.Documenter
-	Trigger
-}
+//type DocumentedTrigger interface {
+//	internal.Documenter
+//	Trigger
+//}
 
 type TriggerHandler struct {
 	Observable
@@ -85,12 +86,29 @@ func NewTriggerHandler(config internal.KillSwitchConfig) *TriggerHandler {
 	}
 }
 
+func (t TriggerHandler)	GetName() string {
+	return t.WrappedTrigger.GetName()
+}
+
+func (t TriggerHandler)	GetDescription() string {
+	return t.WrappedTrigger.GetName()
+}
+
+func (t TriggerHandler)	GetExample() string {
+	return t.WrappedTrigger.GetExample()
+}
+
+func (t TriggerHandler)	GetOptions() []internal.ConfigOption {
+	return t.WrappedTrigger.GetOptions()
+}
+
 func (t *TriggerHandler) Create(config internal.KillSwitchConfig) (Trigger, error) {
 	return NewTriggerHandler(config), nil
 }
 
 func (t *TriggerHandler) Listen() {
 	for {
+		t.Notify(Armed, t.WrappedTrigger, nil)
 		t.WrappedTrigger.Listen()
 
 		if !t.Loop {
@@ -118,8 +136,8 @@ func NewTrigger(config internal.KillSwitchConfig) (*TriggerHandler, error) {
 	return nil, fmt.Errorf("Error parsing config: Trigger with type %s does not exists", config.Type)
 }
 
-func GetAllTriggers() []DocumentedTrigger {
-	return []DocumentedTrigger{
+func GetAllTriggers() []Trigger {
+	return []Trigger{
 		&EthernetDisconnect{},
 		&ReceiveTelegram{},
 		&TimeOut{},
