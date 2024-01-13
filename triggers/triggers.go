@@ -103,10 +103,8 @@ func (t *TriggerHandler) Create(config internal.KillSwitchConfig) (*TriggerHandl
 
 func (t *TriggerHandler) Listen() {
 	for {
-		internal.Log.Infof("LISTEN()")
 		t.Notify(Armed, t.WrappedTrigger, nil)
 		err := t.WrappedTrigger.Listen()
-		internal.Log.Infof("DONELISTEN()")
 
 		if err != nil {
 			t.Notify(Failed, t.WrappedTrigger, err)
