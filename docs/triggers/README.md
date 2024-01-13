@@ -10,6 +10,7 @@ Triggers have the following syntax:
 {
   "type": "SomeTrigger",
   "name": "MyFirstTrigger",
+  "loop": true, //optional (default=false); restart after it got triggered
   "options": { //each trigger defines its own options
     "firstOption": 23,
     "secondOption": "foo"
