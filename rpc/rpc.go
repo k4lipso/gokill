@@ -24,22 +24,25 @@ type TriggerInfo struct {
 	TimeStarted time.Time
 	TimeFired time.Time
 	Id uuid.UUID
+	Active bool
 }
 
 type Query int
 
-func (t *Query) DisableTrigger(id *string, success *bool) error {
+func (t *Query) EnableTrigger(id *string, success *bool) error {
 	var result bool
 	result = false
 
 	//delete trigger from triggerlist, create new one in disabledtriggers
 	for i := len(TriggerList) - 1; i >= 0; i-- {
 		if TriggerList[i].Id.String() == *id {
-			internal.Log.Debugf("Disabling Trigger with id: %s", *id)
-			newTrig := TriggerList[i]
-			newTrig.WrappedTrigger.Enable(false)
-			DisabledTriggers = append(DisabledTriggers, newTrig)
-			TriggerList = append(TriggerList[:i], TriggerList[i+1:]...)
+			internal.Log.Debugf("Enabling Trigger with id: %s", *id)
+			TriggerList[i].WrappedTrigger.Enable(true)
+
+			if TriggerList[i].Running == false {
+				go TriggerList[i].Listen()
+			}
+
 			result = true
 		}
 	}
@@ -48,8 +51,25 @@ func (t *Query) DisableTrigger(id *string, success *bool) error {
 	return nil
 }
 
-func (t *Query) ActiveTriggers(_ *int, reply *[]TriggerInfo) error {
-	internal.Log.Debug("RPC Request: Query::ActiveTriggers")
+
+func (t *Query) DisableTrigger(id *string, success *bool) error {
+	var result bool
+	result = false
+
+	for i := len(TriggerList) - 1; i >= 0; i-- {
+		if TriggerList[i].Id.String() == *id {
+			internal.Log.Debugf("Disabling Trigger with id: %s", *id)
+			TriggerList[i].WrappedTrigger.Enable(false)
+			result = true
+		}
+	}
+
+	*success = result
+	return nil
+}
+
+func (t *Query) LoadedTriggers(_ *int, reply *[]TriggerInfo) error {
+	internal.Log.Debug("RPC Request: Query::LoadedTriggers")
 
 	var result []TriggerInfo
 	for _, trigger := range TriggerList {
@@ -58,6 +78,7 @@ func (t *Query) ActiveTriggers(_ *int, reply *[]TriggerInfo) error {
 			TimeStarted: trigger.TimeStarted,
 			TimeFired: trigger.TimeFired,
 			Id: trigger.Id,
+			Active: trigger.WrappedTrigger.IsEnabled(),
 		}
 
 		result = append(result, triggerInfo)
