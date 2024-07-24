@@ -85,6 +85,10 @@ func (t *TriggerBase) GetAction() actions.Action {
 	return t.action
 }
 
+func (t *TriggerBase)	IsEnabled() bool {
+	return t.enabled
+}
+
 func (t *TriggerBase)	Enable(state bool) {
 	t.enabled = state
 }
@@ -95,6 +99,7 @@ type Trigger interface {
 	Fire()
 	GetAction() actions.Action
 	Enable(state bool)
+	IsEnabled() bool
 	Create(internal.KillSwitchConfig) (Trigger, error)
 }
 
@@ -107,6 +112,7 @@ type TriggerHandler struct {
 	TimeStarted time.Time
 	TimeFired time.Time
 	Id uuid.UUID
+	Running bool
 }
 
 func NewTriggerHandler(config internal.KillSwitchConfig) *TriggerHandler {
@@ -116,6 +122,7 @@ func NewTriggerHandler(config internal.KillSwitchConfig) *TriggerHandler {
 		Loop: config.Loop,
 		Config: config,
 		Id: uuid.New(),
+		Running: false,
 	}
 }
 
@@ -141,9 +148,12 @@ func (t *TriggerHandler) Create(config internal.KillSwitchConfig) (*TriggerHandl
 
 func (t *TriggerHandler) Listen() {
 	for {
+		t.Running = true
+
+		defer func() { t.Running = false }()
+
 		t.Notify(Armed, t.WrappedTrigger, nil)
 		t.TimeStarted = time.Now()
-		t.WrappedTrigger.Enable(true)
 		err := t.WrappedTrigger.Listen()
 		
 		if errors.Is(err, &TriggerDisabledError{}) {
@@ -173,6 +183,7 @@ func NewTrigger(config internal.KillSwitchConfig) (*TriggerHandler, error) {
 	for _, availableTrigger := range GetAllTriggers() {
 		if config.Type == availableTrigger.GetName() {
 			t, err := availableTrigger.Create(config)
+			t.Enable(true)
 
 			if err != nil {
 				return nil, fmt.Errorf("Could not create Trigger, reason: %s", err)

@@ -10,6 +10,7 @@ import (
 
 func main() {
 	disableTrigger := flag.String("d", "", "Id of trigger you want to disable")
+	enableTrigger := flag.String("e", "", "Id of trigger you want to enable")
 	flag.Parse()
 
 	client, err := rpc.Receive()
@@ -19,9 +20,9 @@ func main() {
 		return
 	}
 
-	if len(*disableTrigger) == 0 {
+	if len(*disableTrigger) == 0 && len(*enableTrigger) == 0 {
 		var reply []rpc.TriggerInfo
-		err = client.Call("Query.ActiveTriggers", 0, &reply)
+		err = client.Call("Query.LoadedTriggers", 0, &reply)
 
 		if err != nil {
 			log.Fatal("query error:", err)
@@ -31,6 +32,8 @@ func main() {
 			fmt.Printf("TriggerName: %s\n", info.Config.Name)
 			fmt.Printf("TriggerId: %s\n", info.Id.String())
 			fmt.Printf("TriggerType: %s\n", info.Config.Type)
+			fmt.Printf("TriggerIsActive: %v\n", info.Active)
+			fmt.Printf("TriggerLoop: %v\n", info.Config.Loop)
 
 			if !info.TimeStarted.IsZero() {
 				fmt.Printf("TriggerRunningSince: %v seconds\n", time.Now().Sub(info.TimeStarted).Seconds())
@@ -39,8 +42,7 @@ func main() {
 			if !info.TimeFired.IsZero() {
 				fmt.Printf("TriggerFired %v seconds ago\n", time.Now().Sub(info.TimeFired).Seconds())
 			}
-			fmt.Printf("TriggerType: %s\n", info.Config.Type)
-			fmt.Printf("TriggerLoop: %v\n", info.Config.Loop)
+
 			fmt.Printf("TriggerOptions: %s\n", info.Config.Options)
 
 			for _, actions := range info.Config.Actions {
@@ -50,9 +52,22 @@ func main() {
 			}
 			fmt.Print("\n\n\n")
 		}
-	} else {
+	} 
+
+	if len(*disableTrigger) != 0 {
 		var reply *bool
 		err = client.Call("Query.DisableTrigger", disableTrigger, &reply)
+
+		if err != nil {
+			log.Fatal("query error:", err)
+		}
+
+		fmt.Printf("%v", *reply)
+	}
+
+	if len(*enableTrigger) != 0 {
+		var reply *bool
+		err = client.Call("Query.EnableTrigger", enableTrigger, &reply)
 
 		if err != nil {
 			log.Fatal("query error:", err)
