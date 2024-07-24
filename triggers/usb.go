@@ -11,9 +11,9 @@ import (
 )
 
 type UsbDisconnect struct {
+	TriggerBase
 	WaitTillConnected bool   `json:"waitTillConnected"`
 	DeviceName        string `json:"deviceName"`
-	action            actions.Action
 }
 
 func isUsbConnected(deviceName string) bool {
@@ -31,6 +31,11 @@ func isUsbConnected(deviceName string) bool {
 func (t *UsbDisconnect) Listen() error {
 	if t.WaitTillConnected {
 		for !isUsbConnected(t.DeviceName) {
+			if !t.enabled {
+				return &TriggerDisabledError{}
+			}
+
+
 			time.Sleep(1 * time.Second)
 		}
 
@@ -39,6 +44,10 @@ func (t *UsbDisconnect) Listen() error {
 	}
 
 	for {
+		if !t.enabled {
+			return &TriggerDisabledError{}
+		}
+
 		if !isUsbConnected(t.DeviceName) {
 			break
 		}
@@ -47,10 +56,6 @@ func (t *UsbDisconnect) Listen() error {
 	}
 
 	return nil
-}
-
-func (t *UsbDisconnect) Fire() {
-	actions.Fire(t.action)
 }
 
 func CreateUsbDisconnect(config internal.KillSwitchConfig) (*UsbDisconnect, error) {

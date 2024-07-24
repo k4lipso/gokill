@@ -11,10 +11,10 @@ import (
 )
 
 type ReceiveTelegram struct {
+	TriggerBase
 	Token string `json:"token"`
 	ChatId int64 `json:"chatId"`
 	Message string `json:"message"`
-	action actions.Action
 }
 
 func (s *ReceiveTelegram) Listen() error {
@@ -34,9 +34,14 @@ func (s *ReceiveTelegram) Listen() error {
 	chatId := s.ChatId
 	updates := bot.GetUpdatesChan(u)
 	for update := range updates {
+		if !s.enabled {
+			return &TriggerDisabledError{}
+		}
+
 		if update.Message != nil { // If we got a message
 			if(update.Message.Chat.ID != chatId) {
-				internal.LogDoc(s).Debugf("ReceiveTelegram received wrong ChatId. Got %d, wanted %d", update.Message.Chat.ID, s.ChatId)
+				internal.LogDoc(s).Debugf("ReceiveTelegram received wrong ChatId. Got %d, wanted %d",
+																	update.Message.Chat.ID, s.ChatId)
 				continue	
 			}
 
@@ -51,10 +56,6 @@ func (s *ReceiveTelegram) Listen() error {
 	}
 
 	return nil
-}
-
-func (s *ReceiveTelegram) Fire() {
-	actions.Fire(s.action)
 }
 
 func CreateReceiveTelegram(config internal.KillSwitchConfig) (*ReceiveTelegram, error) {

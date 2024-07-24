@@ -8,22 +8,21 @@ import (
 )
 
 type TimeOut struct {
+	TriggerBase
 	Duration int
-	action   actions.Action
 }
 
 func (t *TimeOut) Listen() error {
-	internal.LogDoc(t).Info("BLUB")
 	internal.LogDoc(t).Info("TimeOut listens")
 	internal.LogDoc(t).Infof("%d", t.Duration)
 	time.Sleep(time.Duration(t.Duration) * time.Second)
 	internal.LogDoc(t).Notice("TimeOut fires")
 
-	return nil
-}
+	if !t.enabled {
+		return &TriggerDisabledError{}
+	}
 
-func (t *TimeOut) Fire() {
-	actions.Fire(t.action)
+	return nil
 }
 
 func (t *TimeOut) Create(config internal.KillSwitchConfig) (Trigger, error) {

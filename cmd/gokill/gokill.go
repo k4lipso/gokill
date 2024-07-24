@@ -9,6 +9,7 @@ import (
 	"github.com/k4lipso/gokill/actions"
 	"github.com/k4lipso/gokill/internal"
 	"github.com/k4lipso/gokill/triggers"
+	"github.com/k4lipso/gokill/rpc"
 )
 
 func GetDocumentation() string {
@@ -95,7 +96,6 @@ func main() {
 	triggerUpdateChan := make(triggers.TriggerUpdateChan)
 	go Observe(triggerUpdateChan)
 
-	var triggerList []*triggers.TriggerHandler
 	for _, cfg := range f {
 		trigger, err := triggers.NewTrigger(cfg)
 		internal.Log.Infof("Registered trigger with name: %s", trigger.Name)
@@ -107,10 +107,10 @@ func main() {
 
 		trigger.Attach(triggerUpdateChan)
 
-		internal.Log.Infof("HAHA")
 		go trigger.Listen()
-		triggerList = append(triggerList, trigger)
+		rpc.TriggerList = append(rpc.TriggerList, trigger)
 	}
 
+	rpc.Serve()
 	select{}
 }
