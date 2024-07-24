@@ -27,6 +27,10 @@ type TriggerInfo struct {
 	Active bool
 }
 
+func (t TriggerInfo) Title() string       { return t.Config.Name }
+func (t TriggerInfo) Description() string { return t.Config.Type }
+func (t TriggerInfo) FilterValue() string { return t.Config.Name }
+
 type Query int
 
 func (t *Query) EnableTrigger(id *string, success *bool) error {
