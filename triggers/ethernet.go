@@ -11,9 +11,9 @@ import (
 )
 
 type EthernetDisconnect struct {
+	TriggerBase
 	WaitTillConnected bool   `json:"waitTillConnected"`
 	InterfaceName     string `json:"interfaceName"`
-	action            actions.Action
 }
 
 func isEthernetConnected(deviceName string) bool {
@@ -34,11 +34,19 @@ func isEthernetConnected(deviceName string) bool {
 func (t *EthernetDisconnect) Listen() error {
 	if t.WaitTillConnected {
 		for !isEthernetConnected(t.InterfaceName) {
+			if !t.enabled {
+				return &TriggerDisabledError{}
+			}
+
 			time.Sleep(1 * time.Second)
 		}
 	}
 
 	for {
+		if !t.enabled {
+			return &TriggerDisabledError{}
+		}
+
 		if !isEthernetConnected(t.InterfaceName) {
 			break
 		}
@@ -48,11 +56,6 @@ func (t *EthernetDisconnect) Listen() error {
 
 	return nil
 }
-
-func (t *EthernetDisconnect) Fire() {
-	actions.Fire(t.action)
-}
-
 
 func CreateEthernetDisconnect(config internal.KillSwitchConfig) (*EthernetDisconnect, error) {
 	result := &EthernetDisconnect{

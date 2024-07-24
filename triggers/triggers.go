@@ -2,8 +2,13 @@ package triggers
 
 import (
 	"fmt"
+	"time"
+	"errors"
+
+	"github.com/google/uuid"
 
 	"github.com/k4lipso/gokill/internal"
+	"github.com/k4lipso/gokill/actions"
 )
 
 type TriggerState int8
@@ -15,7 +20,15 @@ const (
 	Firing
 	Failed
 	Done
+	Disabled
 )
+
+type TriggerDisabledError struct {}
+
+func (e *TriggerDisabledError) Error() string {
+	return "Trigger was disabled"
+}
+
 
 type TriggerUpdate struct {
 	State   TriggerState
@@ -59,10 +72,29 @@ type Observabler interface {
 	GetLen() int
 }
 
+type TriggerBase struct {
+	action actions.Action
+	enabled bool
+}
+
+func (t *TriggerBase) Fire() {
+	actions.Fire(t.action)
+}
+
+func (t *TriggerBase) GetAction() actions.Action {
+	return t.action
+}
+
+func (t *TriggerBase)	Enable(state bool) {
+	t.enabled = state
+}
+
 type Trigger interface {
 	internal.Documenter
 	Listen() error
 	Fire()
+	GetAction() actions.Action
+	Enable(state bool)
 	Create(internal.KillSwitchConfig) (Trigger, error)
 }
 
@@ -71,6 +103,10 @@ type TriggerHandler struct {
 	Name string
 	Loop bool
 	WrappedTrigger Trigger
+	Config internal.KillSwitchConfig
+	TimeStarted time.Time
+	TimeFired time.Time
+	Id uuid.UUID
 }
 
 func NewTriggerHandler(config internal.KillSwitchConfig) *TriggerHandler {
@@ -78,6 +114,8 @@ func NewTriggerHandler(config internal.KillSwitchConfig) *TriggerHandler {
 		Observable: createObservable(),
 		Name: config.Name,
 		Loop: config.Loop,
+		Config: config,
+		Id: uuid.New(),
 	}
 }
 
@@ -86,7 +124,7 @@ func (t TriggerHandler)	GetName() string {
 }
 
 func (t TriggerHandler)	GetDescription() string {
-	return t.WrappedTrigger.GetName()
+	return t.WrappedTrigger.GetDescription()
 }
 
 func (t TriggerHandler)	GetExample() string {
@@ -104,7 +142,14 @@ func (t *TriggerHandler) Create(config internal.KillSwitchConfig) (*TriggerHandl
 func (t *TriggerHandler) Listen() {
 	for {
 		t.Notify(Armed, t.WrappedTrigger, nil)
+		t.TimeStarted = time.Now()
+		t.WrappedTrigger.Enable(true)
 		err := t.WrappedTrigger.Listen()
+		
+		if errors.Is(err, &TriggerDisabledError{}) {
+			t.Notify(Failed, t.WrappedTrigger, err)
+			return
+		}
 
 		if err != nil {
 			t.Notify(Failed, t.WrappedTrigger, err)
@@ -112,6 +157,7 @@ func (t *TriggerHandler) Listen() {
 		}
 
 		t.Notify(Firing, t.WrappedTrigger, nil)
+		t.TimeFired = time.Now()
 		t.WrappedTrigger.Fire()
 		t.Notify(Done, t.WrappedTrigger, nil)
 
@@ -152,8 +198,8 @@ func GetAllTriggers() []Trigger {
 func GetDocumenters() []internal.Documenter {
 	var result []internal.Documenter
 
-	for _, action := range GetAllTriggers() {
-		result = append(result, action)
+	for _, trigger := range GetAllTriggers() {
+		result = append(result, trigger)
 	}
 
 	return result
