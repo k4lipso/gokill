@@ -11,24 +11,26 @@ import (
 
 	rpcExt "net/rpc"
 	"github.com/k4lipso/gokill/rpc"
+	"github.com/k4lipso/gokill/actions"
+	"github.com/k4lipso/gokill/internal"
 )
 
 var client *rpcExt.Client
 
 var (
 	modelStyle = lipgloss.NewStyle().
-			Align(lipgloss.Center, lipgloss.Center).
+			Align(lipgloss.Left, lipgloss.Center).
 			BorderStyle(lipgloss.NormalBorder()).
-			BorderForeground(lipgloss.Color("#555555"))
+			BorderForeground(lipgloss.Color("#004400"))
 
 	focusedModelStyle = lipgloss.NewStyle().
-				Align(lipgloss.Center, lipgloss.Center).
+				Align(lipgloss.Left, lipgloss.Center).
 				BorderStyle(lipgloss.NormalBorder()).
-				BorderForeground(lipgloss.Color("#ffffff"))
+				BorderForeground(lipgloss.Color("#00ff00"))
 	spinnerStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("69"))
 	helpStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
 
-	disabledStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#aa0000"))
+	disabledStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#666666"))
 	activeStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#00aa00"))
 )
 
@@ -37,40 +39,95 @@ type mainModel struct {
 	infos   []rpc.TriggerInfo
 	index   int
 	WindowSize tea.WindowSizeMsg
-	Selected int
+	SelectedTrigger int
+	SelectedAction int
 }
 
 func newModel(infos []rpc.TriggerInfo) mainModel {
-	m := mainModel{state: 0, Selected: -1, infos: infos,}
+	m := mainModel{state: 0, SelectedTrigger: -1, SelectedAction: -1, infos: infos,}
 
 	return m
 }
 
-func (m mainModel) Render() string {
+func (m mainModel) GetActionContent(info rpc.TriggerInfo) string {
+	var result string
 
+	result += fmt.Sprintf("Active Actions: %d\n", len(info.Config.Actions))
+
+	var horizontal []string
+
+	cellsPerRow := 1
+	//cellWidth := (m.WindowSize.Width / cellsPerRow) - int(0.02 * float32(m.WindowSize.Width))
+	cellWidth := (m.WindowSize.Width / 2) - int(0.02 * float32(m.WindowSize.Width))
+	cellHeight := m.WindowSize.Height / (int(len(m.infos) / cellsPerRow) + 3)
+	cellHeight = 5
+
+	style := lipgloss.NewStyle().
+		Width(cellWidth).
+		Height(cellHeight).
+		Inherit(modelStyle).
+		BorderForeground(lipgloss.Color("#440000"))
+	focusedStyle := lipgloss.NewStyle().
+		Width(cellWidth).
+		Height(cellHeight).
+		Inherit(focusedModelStyle).
+		BorderForeground(lipgloss.Color("#ff0000"))
+
+	for idx, action := range info.Config.Actions {
+		actionStr := fmt.Sprintf("\nType: %s\nStage: %d\n", action.Type, action.Stage)
+		actionStr += fmt.Sprintf("Selected: %d", m.SelectedAction)
+		actionStr += fmt.Sprintf("idx: %d", idx)
+
+		actualAction := actions.GetActionByType(action.Type)
+		options := actualAction.GetOptions()
+
+		actionStr += fmt.Sprintf("Options:\n")
+		for _, option := range options {
+			actionStr += fmt.Sprintf("\t%s: %s\n", option.Name, option.Description)
+		}
+
+		if m.SelectedAction == idx {
+			horizontal = append(horizontal, focusedStyle.Render(actionStr))
+		} else {
+			horizontal = append(horizontal, style.Render(actionStr))
+		}
+	}
+
+	return lipgloss.JoinVertical(lipgloss.Top, horizontal...)
+}
+
+
+func (m mainModel) Render() string {
 	var horizontal []string
 	var vertical [][]string
 
-	cellsPerRow := 3
-	cellWidth := (m.WindowSize.Width / cellsPerRow) - int(0.02 * float32(m.WindowSize.Width))
+	cellsPerRow := 1
+	//cellWidth := (m.WindowSize.Width / cellsPerRow) - int(0.02 * float32(m.WindowSize.Width))
+	cellWidth := (m.WindowSize.Width / 2) - int(0.02 * float32(m.WindowSize.Width))
 	cellHeight := m.WindowSize.Height / (int(len(m.infos) / cellsPerRow) + 3)
-	cellWidth = 15
 	cellHeight = 5
 
 	style := lipgloss.NewStyle().Width(cellWidth).Height(cellHeight).Inherit(modelStyle)
 	focusedStyle := lipgloss.NewStyle().Width(cellWidth).Height(cellHeight).Inherit(focusedModelStyle)
+	//styleBig := lipgloss.NewStyle().Width(cellWidth).Height(len(m.infos) * cellHeight + 3).Inherit(modelStyle).Align()
+	//focusedStyleBig := lipgloss.NewStyle().Width(cellWidth).Height(len(m.infos) * cellHeight + 3).Inherit(focusedModelStyle)
 
 	count := 0
-	for idx, info := range m.infos {
-		activeStyled := activeStyle.Render("Active")
+
+	GetContent := func(info rpc.TriggerInfo) string {
+		activeStyled := activeStyle.Render("Running")
 		if info.Active == false {
 			activeStyled = disabledStyle.Render("Disabled")
 		}
 
-		if m.state == idx {
-			horizontal = append(horizontal, focusedStyle.Render(fmt.Sprintf("Name: %s\nDesc: %s\n%v", info.Title(), info.Description(), activeStyled)))
+		return fmt.Sprintf("Name: %s\nDesc: %s\n%v", info.Title(), info.Description(), activeStyled)
+	}
+
+	for idx, info := range m.infos {
+		if m.state == idx && m.SelectedTrigger < 0 {
+			horizontal = append(horizontal, focusedStyle.Render(GetContent(info)))
 		} else {
-			horizontal = append(horizontal, style.Render(fmt.Sprintf("Name: %s\nDesc: %s\n%v", info.Title(), info.Description(), activeStyled)))
+			horizontal = append(horizontal, style.Render(GetContent(info)))
 		}
 
 		count += 1
@@ -81,19 +138,25 @@ func (m mainModel) Render() string {
 		}
 	}
 
-	
 	var horizontalRendered []string
 	for _, v := range vertical {
 		horizontalRendered = append(horizontalRendered, lipgloss.JoinHorizontal(lipgloss.Top, v...))
 	}
 
-	return lipgloss.JoinVertical(lipgloss.Top, horizontalRendered...)
+	verticals := lipgloss.JoinVertical(lipgloss.Top, horizontalRendered...)
+	var rightSide string
+	if m.SelectedTrigger < 0 {
+		rightSide = m.GetActionContent(m.infos[m.state])
+	} else {
+		rightSide = m.GetActionContent(m.infos[m.state])
+	}
+	return lipgloss.JoinHorizontal(lipgloss.Top, verticals, rightSide)
 }
 
 
-func (m mainModel) RenderSelected() string {
+func (m mainModel) RenderSelectedTrigger() string {
 
-	if m.Selected < 0 {
+	if m.SelectedTrigger < 0 {
 		return m.Render()
 	}
 
@@ -102,14 +165,13 @@ func (m mainModel) RenderSelected() string {
 
 	focusedStyle := lipgloss.NewStyle().Width(cellWidth).Height(cellHeight).Inherit(focusedModelStyle)
 
-	info := m.infos[m.Selected]
+	info := m.infos[m.SelectedTrigger]
 
-	activeStyled := activeStyle.Render("Active")
+	activeStyled := activeStyle.Render("Running")
 	if info.Active == false {
 		activeStyled = disabledStyle.Render("Disabled")
 	}
 
-			
 	return lipgloss.JoinHorizontal(lipgloss.Top, focusedStyle.Render(fmt.Sprintf("Name: %s\nDesc: %s\n%v", info.Title(), info.Description(), activeStyled)))
 }
 
@@ -130,17 +192,19 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, tea.Quit
 		}
 
-		if m.Selected < 0 {
+		if m.SelectedTrigger < 0 {
 			return UpdateChoice(msg, m)
 		}
 	}
 
-	return UpdateSelected(msg, m)
+	return UpdateSelectedTrigger(msg, m)
 }
 
 func UpdateChoice(msg tea.Msg, m mainModel) (tea.Model, tea.Cmd) {
 	//var cmd tea.Cmd
 	var cmds []tea.Cmd
+	m.SelectedAction = -1
+
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.WindowSize = msg
@@ -148,15 +212,21 @@ func UpdateChoice(msg tea.Msg, m mainModel) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "q":
 			return m, tea.Quit
-		case "tab":
+		case "shitf+tab", "up", "k":
+			m.state -= 1
+			if m.state < 0 {
+				m.state = len(m.infos) - 1
+			}
+		case "tab", "down", "j":
 			m.state += 1
 			if m.state >= len(m.infos) {
 				m.state = 0
 			}
-		case "n":
+		case "d":
 			m.infos[m.state].Active =	ToggleActive(m.infos[m.state].Active, m.infos[m.state].Id.String())
-		case "enter":
-			m.Selected = m.state
+		case "enter", "l", "right":
+			m.SelectedTrigger = m.state
+			m.SelectedAction = 0
 			return m, nil
 		}
 	}
@@ -164,7 +234,7 @@ func UpdateChoice(msg tea.Msg, m mainModel) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func UpdateSelected(msg tea.Msg, m mainModel) (tea.Model, tea.Cmd) {
+func UpdateSelectedTrigger(msg tea.Msg, m mainModel) (tea.Model, tea.Cmd) {
 	//var cmd tea.Cmd
 	var cmds []tea.Cmd
 	switch msg := msg.(type) {
@@ -172,17 +242,25 @@ func UpdateSelected(msg tea.Msg, m mainModel) (tea.Model, tea.Cmd) {
 		m.WindowSize = msg
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "q":
-			m.Selected = -1
-		case "tab":
-			//m.state += 1
-			//if m.state >= len(m.infos) {
-			//	m.state = 0
-			//}
-		case "n":
+		case "q", "h", "left":
+			m.SelectedTrigger = -1
+			m.SelectedAction = -1
+		case "shitf+tab", "up", "k":
+			m.SelectedAction -= 1
+			if m.SelectedAction < 0 {
+				m.SelectedAction = len(m.infos[m.state].Config.Actions) - 1
+			}
+		case "tab", "down", "j":
+			m.SelectedAction += 1
+			if m.SelectedAction >= len(m.infos[m.state].Config.Actions) {
+				m.SelectedAction = 0
+			}
+		case "t":
+			go TestAction(m.infos[m.state].Config.Actions[m.SelectedAction])
+		case "d":
 			m.infos[m.state].Active =	ToggleActive(m.infos[m.state].Active, m.infos[m.state].Id.String())
 		case "enter":
-			//m.Selected = m.state
+			//m.SelectedTrigger = m.state
 			//return m, nil
 		}
 	}
@@ -190,6 +268,23 @@ func UpdateSelected(msg tea.Msg, m mainModel) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
+func TestAction(conf internal.ActionConfig) {
+	QueryMsg := "Query.TestAction"
+
+	var reply *error
+	err := client.Call(QueryMsg, conf, &reply)
+
+	if err != nil {
+		log.Fatal("query error:", err)
+	}
+
+	if *reply == nil {
+		return
+	}
+
+	return
+	
+}
 
 func ToggleActive(current bool, id string) bool {
 
@@ -214,14 +309,19 @@ func ToggleActive(current bool, id string) bool {
 
 func (m mainModel) View() string {
 	var s string
-	if m.Selected >= 0 {
-		s += m.RenderSelected()
-	} else {
-		s += m.Render()
-	}
+	s += m.Render()
+	//if m.SelectedTrigger >= 0 {
+	//	s += m.RenderSelectedTrigger()
+	//} else {
+	//	s += m.Render()
+	//}
 
 	model := m.currentFocusedModel()
-	s += helpStyle.Render(fmt.Sprintf("\ntab: focus next • n: new %s • q: exit\n", model))
+	if m.SelectedTrigger < 0 {
+		s += helpStyle.Render(fmt.Sprintf("\ntab: focus next • d: enable/disable %s • q: exit\n", model))
+	} else {
+		s += helpStyle.Render(fmt.Sprintf("\ntab: focus next • t: test action • q: exit\n"))
+	}
 	return s
 }
 

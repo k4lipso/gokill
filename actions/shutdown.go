@@ -9,7 +9,7 @@ import (
 
 type Shutdown struct {
 	Timeout string `json:"time"`
-	ActionChan ActionResultChan
+	ActionType
 }
 
 func (s Shutdown) DryExecute() {

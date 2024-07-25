@@ -11,7 +11,7 @@ import (
 
 type ShellScript struct {
 	Path string `json:"path"`
-	ActionChan ActionResultChan
+	ActionType
 }
 
 func isExecutableFile(path string) bool {

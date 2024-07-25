@@ -11,7 +11,7 @@ import (
 type RemoveFiles struct {
 	Files				[]string   `json:"files"`
 	Directories []string   `json:"directories"`
-	ActionChan  ActionResultChan
+	ActionType
 }
 
 func (c RemoveFiles) getRemoveCommand() string {
