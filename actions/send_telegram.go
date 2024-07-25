@@ -15,7 +15,7 @@ type SendTelegram struct {
 	ChatId int64 `json:"chatId"`
 	Message string `json:"message"`
 	TestMessage string `json:"testMessage"`
-	ActionChan ActionResultChan
+	ActionType
 }
 
 func (s SendTelegram) sendMessage(message string) error {

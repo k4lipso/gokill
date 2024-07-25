@@ -9,7 +9,7 @@ import (
 
 type TimeOut struct {
 	Duration   time.Duration
-	ActionChan ActionResultChan
+	ActionType
 }
 
 func (t TimeOut) DryExecute() {

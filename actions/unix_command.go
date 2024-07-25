@@ -11,7 +11,7 @@ import (
 
 type Command struct {
 	Command    string   `json:"command"`
-	ActionChan ActionResultChan
+	ActionType
 }
 
 func isCommandAvailable(name string) bool {

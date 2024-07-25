@@ -8,7 +8,7 @@ import (
 
 type Printer struct {
 	Message    string
-	ActionChan ActionResultChan
+	ActionType
 }
 
 func (p Printer) Execute() {

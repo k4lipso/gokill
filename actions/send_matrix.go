@@ -26,7 +26,7 @@ type SendMatrix struct {
 	RoomId string `json:"roomId"`
 	Message string `json:"message"`
 	TestMessage string `json:"testMessage"`
-	ActionChan ActionResultChan
+	ActionType
 }
 
 func (s SendMatrix) sendMessage(message string) error {

@@ -14,6 +14,7 @@ import (
 
 	"github.com/k4lipso/gokill/internal"
 	"github.com/k4lipso/gokill/triggers"
+	"github.com/k4lipso/gokill/actions"
 )
 
 var TriggerList []*triggers.TriggerHandler
@@ -55,6 +56,27 @@ func (t *Query) EnableTrigger(id *string, success *bool) error {
 	return nil
 }
 
+func (t *Query) TestAction(conf internal.ActionConfig, result *error) error {
+	internal.Log.Infof("Action Test requested. Type: %s", conf.Type);
+
+	actionChan := make(actions.ActionResultChan)
+	action, err := actions.NewSingleAction(conf, actionChan)
+
+	if err != nil {
+		internal.Log.Errorf("Error during action test: %s", err)
+		*result = err
+		return err
+	}
+	
+	go action.DryExecute()
+	err = <-actionChan
+
+	if err != nil {
+		internal.Log.Errorf("Error during action test: %s", err)
+	}
+
+	return err
+}
 
 func (t *Query) DisableTrigger(id *string, success *bool) error {
 	var result bool
