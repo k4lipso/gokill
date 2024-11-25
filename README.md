@@ -14,10 +14,7 @@ A full list of Triggers and Actions with all their configuration options can be 
 ## usage
 If you use NixOS gokill can easily be integrated into your system configuration - scroll down for more info on that.  
 
-For all other linux distributions gokill currently needs to be built and setup manually. This is supposed to change.
-Iam currently working/researching on publishing gokill as [ppa](https://help.launchpad.net/Packaging/PPA) and as snap.
-If you have other recommendations let me know.  
-
+For all other linux distributions gokill currently needs to be built and setup manually.
 
 ``` bash
 # Clone the gokill repository
