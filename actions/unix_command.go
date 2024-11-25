@@ -60,7 +60,7 @@ func (c Command) splitCommandString() (string, []string, error) {
 
 func (c Command) Execute() {
 	command, args, err := c.splitCommandString()
-	internal.LogDoc(c).Infof("Executing command: ", c.Command)
+	internal.LogDoc(c).Infof("Executing command: %s", c.Command)
 
 	if err != nil {
 		c.ActionChan <- err
