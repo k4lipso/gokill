@@ -2,8 +2,7 @@
   description = "A very basic flake";
 
   #nixpkgs for testing framework
-  inputs.nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
-
+  inputs.nixpkgs.url = "github:nixos/nixpkgs/nixos-24.05";
   inputs.utils.url = "github:numtide/flake-utils";
 
   outputs = { self, nixpkgs, utils, ... }: 
@@ -12,7 +11,7 @@
   (utils.lib.eachSystem (utils.lib.defaultSystems) ( system:
   let
     pkgs = nixpkgs.legacyPackages.${system};
-    currentVendorHash = "sha256-Q14p7L2Ez/kvBhMUxlyMA1I/XEIxgSXOp4dpmH/SQyI=";
+    currentVendorHash = "sha256-CKvFjhAXXuDvM0ZAlLhuHa/frjyn7ehJ55jb9JsJWII=";
   in
   {
     devShells.default = pkgs.mkShell {
@@ -45,17 +44,6 @@
 
         postInstall = ''
           '';
-      };
-
-      gokillSnap = pkgs.snapTools.makeSnap {
-        meta = {
-          name = "gokill";
-          summary = "simple but efficient";
-          description = "this should be longer";
-          architectures = [ "amd64" ];
-          confinement = "classic";
-          apps.gokill.command = "${gokill}/bin/gokill";
-        };
       };
 
       docs = pkgs.callPackage (import ./docs/default.nix) { self = self; };
