@@ -22,6 +22,8 @@ type SendMatrix struct {
 	Homeserver string `json:"homeserver"`
 	Username string `json:"username"`
 	Password string `json:"password"`
+	Token string `json:"token"`
+	DeviceID string `json:"deviceId"`
 	Database string `json:"database"`
 	RoomId string `json:"roomId"`
 	Message string `json:"message"`
@@ -40,13 +42,20 @@ func (s SendMatrix) sendMessage(message string) error {
 		return err
 	}
 
-	cryptoHelper.LoginAs = &mautrix.ReqLogin{
-		Type:       mautrix.AuthTypePassword,
-		Identifier: mautrix.UserIdentifier{Type: mautrix.IdentifierTypeUser, User: s.Username},
-		Password:   s.Password,
+	client.DeviceID = id.DeviceID(s.DeviceID)
+
+	if len(s.Token) != 0 {
+		client.UserID = id.UserID(s.Username)
+		client.AccessToken = s.Password
+	} else {
+		cryptoHelper.LoginAs = &mautrix.ReqLogin{
+			Type:       mautrix.AuthTypePassword,
+			Identifier: mautrix.UserIdentifier{Type: mautrix.IdentifierTypeUser, User: s.Username},
+			Password:   s.Password,
+		}
 	}
 
-	err = cryptoHelper.Init()
+	err = cryptoHelper.Init(context.Background())
 	if err != nil {
 		return err
 	}
@@ -67,7 +76,7 @@ func (s SendMatrix) sendMessage(message string) error {
 	}()
 
 	time.Sleep(5 * time.Second)
-	resp, err := client.SendText(id.RoomID(s.RoomId), message)
+	resp, err := client.SendText(context.Background(), id.RoomID(s.RoomId), message)
 
 	if err != nil {
 		return fmt.Errorf("Failed to send event")
@@ -125,8 +134,12 @@ func CreateSendMatrix(config internal.ActionConfig, c ActionResultChan) (SendMat
 		return SendMatrix{}, internal.OptionMissingError{"username"}
 	}
 
-	if result.Password == "" {
-		return SendMatrix{}, internal.OptionMissingError{"password"}
+	if result.Password == "" || result.Token == "" {
+		return SendMatrix{}, internal.OptionMissingError{"password or token"}
+	}
+
+	if result.DeviceID == "" {
+		return SendMatrix{}, internal.OptionMissingError{"deviceId"}
 	}
 
 	if result.Database == "" {
@@ -168,7 +181,8 @@ func (p SendMatrix) GetExample() string {
 		"options": {
 			"homeserver": "matrix.org",
 			"username": "testuser",
-			"password": "super-secret",
+			"token": "syt_AHAuYW1pA2Rac2NvamRkamVzZaVc_bXaMfbXzzbIvtXKlealN_2jtbs8",
+			"deviceId": "ZDBLQAQLJH",
 			"database": "/etc/gokill/matrix.db",
 			"roomId": "!Balrthajskensaw:matrix.org",
 			"message": "attention, intruders got my device!",
@@ -196,6 +210,18 @@ func (p SendMatrix) GetOptions() []internal.ConfigOption {
 			Name: "password",
 			Type: "string",
 			Description: "password in clear text",
+			Default: "",
+		},
+		{
+			Name: "token",
+			Type: "string",
+			Description: "access token in clear text",
+			Default: "",
+		},
+		{
+			Name: "deviceId",
+			Type: "string",
+			Description: "A device id. Example: ZDBLQAQLJH",
 			Default: "",
 		},
 		{
