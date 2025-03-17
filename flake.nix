@@ -2,7 +2,7 @@
   description = "A very basic flake";
 
   #nixpkgs for testing framework
-  inputs.nixpkgs.url = "github:nixos/nixpkgs/nixos-24.05";
+  inputs.nixpkgs.url = "github:nixos/nixpkgs/nixos-24.11";
   inputs.utils.url = "github:numtide/flake-utils";
 
   outputs = { self, nixpkgs, utils, ... }: 
@@ -11,7 +11,7 @@
   (utils.lib.eachSystem (utils.lib.defaultSystems) ( system:
   let
     pkgs = nixpkgs.legacyPackages.${system};
-    currentVendorHash = "sha256-CKvFjhAXXuDvM0ZAlLhuHa/frjyn7ehJ55jb9JsJWII=";
+    currentVendorHash = "sha256-+JCr0Wsm7mgAOOHbP8mzCI6i8hkf9TS4hq4TYNmBvpM=";
   in
   {
     devShells.default = pkgs.mkShell {
