@@ -11,7 +11,7 @@
   (utils.lib.eachSystem (utils.lib.defaultSystems) ( system:
   let
     pkgs = nixpkgs.legacyPackages.${system};
-    currentVendorHash = "sha256-CKvFjhAXXuDvM0ZAlLhuHa/frjyn7ehJ55jb9JsJWII=";
+    currentVendorHash = "sha256-oMBHRcXxpoTjNkCnqQeSTkIQIdnBXv1vE267vQF47zY=";
   in
   {
     devShells.default = pkgs.mkShell {
