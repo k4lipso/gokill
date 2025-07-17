@@ -32,24 +32,26 @@ go build cmd/gokill/gokill.go
 ## Config Example
 
 gokill is configured using a json file. it consists of a list of triggers, where each of the triggers as a list of 
-actions that will be executed once triggered.
+actions that will be executed once triggered. The example configures gokill to send a message on Telegram and shutdown
+the device as soon as a specific USB drive gets disconnected. In addition to that it locks the screen if an ethernet
+cable is disconnected.
 
-``` yaml
-[ //list of triggers
+``` nix
+[
     {
-		"type": "UsbDisconnect", //triggers when the given device is disconnected
+		"type": "UsbDisconnect",
 		"name": "First Trigger",
 		"options": {
 			"deviceId": "ata-Samsung_SSD_860_EVO_1TB_S4AALKWJDI102",
-			"waitTillConnected": true //only trigger when usb drive was actually attached before
+			"waitTillConnected": true
 		},
-        "actions": [ //list of actions that will be executed when triggered
+        "actions": [
             {
                 "name": "unixCommand",
                 "options": {
                     "command": "shutdown -h now"
                 },
-                "stage": 2 // defines the order in which actions are triggered.
+                "stage": 2
             },
             {
 		        "type": "SendTelegram",
@@ -59,7 +61,7 @@ actions that will be executed once triggered.
 		        	"message": "attention, intruders got my device!",
 		        	"testMessage": "this is just a test, no worries"
 		        },
-                "stage": 1 //this event is triggered first, then the shutdown
+                "stage": 1
             }
         ]
     },
@@ -73,7 +75,7 @@ actions that will be executed once triggered.
             {
                 "name": "unixCommand",
                 "options": {
-                    "command": "env DISPLAY=:0 sudo su -c i3lock someUser" //example of locking someUser's screen as root
+                    "command": "env DISPLAY=:0 sudo su -c i3lock someUser"
                 }
             }
         ]
