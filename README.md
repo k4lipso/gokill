@@ -34,7 +34,7 @@ go build cmd/gokill/gokill.go
 gokill is configured using a json file. it consists of a list of triggers, where each of the triggers as a list of 
 actions that will be executed once triggered.
 
-``` json
+``` yaml
 [ //list of triggers
     {
 		"type": "UsbDisconnect", //triggers when the given device is disconnected
@@ -82,7 +82,7 @@ actions that will be executed once triggered.
 ```
 
 ## nix support
-gokill enjoys full nix support. gokill exposes a nix flakes that outputs a gokill package, a nixosModule and more.
+gokill exposes a nix flakes that outputs a gokill package, a nixosModule and more.
 That means you can super easily incorporate gokill into your existing nixosConfigurations. 
 
 ### NixOS Module
