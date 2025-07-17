@@ -25,4 +25,4 @@ jobs:
         with:
           nix_path: nixpkgs=channel:nixos-unstable
 
-      - run: nix flake check -L
+      - run: NIXPKGS_ALLOW_INSECURE=1 nix flake check -L --impure

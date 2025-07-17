@@ -25,4 +25,4 @@ jobs:
         with:
           nix_path: nixpkgs=channel:nixos-unstable
 
-      - run: nix build .\#gokill
+      - run: NIXPKGS_ALLOW_INSECURE=1 nix build .\#gokill --impure

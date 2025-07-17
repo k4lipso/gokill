@@ -45,7 +45,7 @@ jobs:
             #    name: nix-community
             #    authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
 
-      - run: nix build .#docs --show-trace
+      - run: NIXPKGS_ALLOW_INSECURE=1 nix build .#docs --show-trace --impure
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v2
