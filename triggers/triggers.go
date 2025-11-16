@@ -184,7 +184,7 @@ func (t *TriggerHandler) Listen() {
 		err := t.WrappedTrigger.Listen()
 
 		if errors.Is(err, &TriggerDisabledError{}) {
-			t.UpdateState(Failed, err)
+			t.UpdateState(Disabled, err)
 			return
 		}
 
