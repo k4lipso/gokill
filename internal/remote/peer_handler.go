@@ -33,7 +33,8 @@ import (
 )
 
 var (
-	Listen = libp2p.ListenAddrStrings("/ip4/0.0.0.0/tcp/0")
+	Listen  = libp2p.ListenAddrStrings("/ip4/0.0.0.0/tcp/0")
+	Handler *PeerHandler
 )
 
 func SetupLibp2pHost(ctx context.Context, dbPath string) (host host.Host, dht *dht.IpfsDHT, err error) {
@@ -327,6 +328,16 @@ func (s *PeerHandler) AddPeerGroup(Name string) (*PeerGroup, error) {
 	s.PeerGroups[Name] = result
 	s.UpdateConfig()
 	return result, nil
+}
+
+func (n *PeerHandler) Broadcast(peerGroupName string, msg string) error {
+	peerGroup, ok := n.PeerGroups[peerGroupName]
+
+	if !ok {
+		return fmt.Errorf("PeerGroup not found.")
+	}
+
+	return peerGroup.Broadcast(msg)
 }
 
 func initDHT(ctx context.Context, h host.Host) *dht.IpfsDHT {

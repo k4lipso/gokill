@@ -100,7 +100,7 @@ func NewAction(config []internal.ActionConfig) (Action, error) {
 
 	stagedActions := StagedActions{
 		StageCount: 0,
-		Stages: []Stage{},
+		Stages:     []Stage{},
 	}
 
 	stagedActions.ActionChan = make(ActionResultChan)
@@ -141,6 +141,7 @@ func GetAllActions() []DocumentedAction {
 		SendMatrix{},
 		SendTelegram{},
 		TimeOut{},
+		Remote{},
 	}
 }
 

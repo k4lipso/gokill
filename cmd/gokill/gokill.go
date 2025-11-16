@@ -122,6 +122,7 @@ func runRemoteHandler() {
 	internal.Log.Infof("Initialization complete!")
 
 	rpc.PeerHandler = &peerHandler
+	remote.Handler = &peerHandler
 	peerHandler.RunBackground(ctx, h, dht)
 }
 
@@ -168,13 +169,13 @@ func main() {
 
 	for _, cfg := range f {
 		trigger, err := triggers.NewTrigger(cfg)
-		internal.Log.Infof("Registered trigger with name: %s", trigger.Name)
 
 		if err != nil {
 			internal.Log.Errorf("%s", err)
 			return
 		}
 
+		internal.Log.Infof("Registered trigger with name: %s", trigger.Name)
 		trigger.Attach(triggerUpdateChan)
 
 		go trigger.Listen()
