@@ -11,11 +11,18 @@
   nixpkgs.lib.attrsets.recursiveUpdate 
   (utils.lib.eachSystem (utils.lib.defaultSystems) ( system:
   let
-    pkgs = nixpkgs.legacyPackages.${system};
+    pkgs = import nixpkgs {
+      inherit system;
+      config.permittedInsecurePackages = [
+        "olm-3.2.16"
+      ];
+    };
     currentVendorHash = "sha256-k1WTI34jQ04comCTT94RVSgsb+rQP30UAVo2sPPLcVA=";
   in
   {
+
     devShells.default = pkgs.mkShell {
+
       packages = with pkgs; [
         go
         gotools
@@ -32,7 +39,7 @@
         currentVendorHash = currentVendorHash; 
       };
 
-      gokill-docbuilder = pkgs.buildGoModule rec {
+      gokill-docbuilder = pkgs.buildGoModule {
         pname = "docbuilder";
         version = "1.0";
         vendorHash = currentVendorHash;
