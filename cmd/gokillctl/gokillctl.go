@@ -19,9 +19,10 @@ import (
 )
 
 var (
-	dbPath    string
-	debug     bool
-	rpcClient *RPC.Client
+	dbPath     string
+	debug      bool
+	showStages bool
+	rpcClient  *RPC.Client
 )
 
 // Create the root command
@@ -112,12 +113,19 @@ var dumpCmd = &cobra.Command{
 var statusCmd = &cobra.Command{
 	Use:   "status",
 	Short: "Show runtime status of on or more triggers",
+	Args:  cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		var reply []rpc.TriggerInfo
 		err := rpcClient.Call("Query.LoadedTriggers", 0, &reply)
 
 		if err != nil {
 			log.Fatal("query error:", err)
+		}
+
+		var triggerId string
+
+		if len(args) == 1 {
+			triggerId = args[0]
 		}
 
 		var leveledList pterm.LeveledList
@@ -149,9 +157,16 @@ var statusCmd = &cobra.Command{
 		}
 
 		for _, info := range reply {
+			if len(triggerId) > 0 && triggerId != info.Id.String() {
+				continue
+			}
 
 			trigger := pterm.LeveledListItem{Level: 0, Text: triggerHeader(info)}
 			leveledList = append(leveledList, trigger)
+
+			if !showStages {
+				continue
+			}
 
 			actionsCfg := info.Config.Actions
 
@@ -197,6 +212,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&dbPath, "db", "", "db path")
 	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "enable debug mode")
 
+	statusCmd.Flags().BoolVar(&showStages, "stages", false, "Show configured Stages")
 	rootCmd.AddCommand(statusCmd)
 	rootCmd.AddCommand(dumpCmd)
 
