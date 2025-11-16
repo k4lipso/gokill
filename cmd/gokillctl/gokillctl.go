@@ -31,6 +31,182 @@ var rootCmd = &cobra.Command{
 	Short: "Interact with the gokill daemon",
 }
 
+///// REMOTE COMMANDS
+
+var remoteCmd = &cobra.Command{
+	Use:   "remote",
+	Short: "Interact with remote settings and state",
+}
+
+// TODO: Continue here, create 'write' command to write something to the topic and test if its received
+var broadcastCmd = &cobra.Command{
+	Use:   "broadcast",
+	Short: "Broadcast a message to root",
+	Args:  cobra.ExactArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		serviceName := args[0]
+
+		peerGroup := rpc.PeerGroupService{PeerGroup: "root", Service: serviceName}
+		err := rpcClient.Call("Query.Broadcast", &peerGroup, "")
+		if err != nil {
+			internal.Log.Error(err.Error())
+		}
+
+		internal.Log.Info("Broadcasted message.")
+	},
+}
+
+var peerGroupCmd = &cobra.Command{
+	Use:   "peerGroup",
+	Short: "Add, delete or list peerGroups",
+}
+
+var addPeerGroupCmd = &cobra.Command{
+	Use:   "add",
+	Short: "add a peerGroup",
+	Args:  cobra.ExactArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		peerGroup := args[0]
+
+		var placeholder int
+		err := rpcClient.Call("Query.AddPeerGroup", &peerGroup, &placeholder)
+
+		if err != nil {
+			internal.Log.Error(err.Error())
+			return
+		}
+
+		internal.Log.Infof("PeerGroup %s was added\n", peerGroup)
+	},
+}
+
+var deletePeerGroupCmd = &cobra.Command{
+	Use:   "delete",
+	Short: "delete a peerGroup",
+	Args:  cobra.ExactArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		peerGroup := args[0]
+
+		var placeholder int
+		err := rpcClient.Call("Query.DeletePeerGroup", &peerGroup, &placeholder)
+
+		if err != nil {
+			internal.Log.Error(err.Error())
+			return
+		}
+
+		internal.Log.Infof("PeerGroup %s was deleted\n", peerGroup)
+	},
+}
+
+var listPeerGroupsCmd = &cobra.Command{
+	Use:   "list",
+	Short: "list all peerGroups",
+	Run: func(cmd *cobra.Command, args []string) {
+		var reply []string
+		err := rpcClient.Call("Query.ListPeerGroups", 0, &reply)
+
+		if err != nil {
+			internal.Log.Error(err.Error())
+			return
+		}
+
+		internal.Log.Info("PeerGroups:")
+		for _, ns := range reply {
+			internal.Log.Info(ns)
+		}
+	},
+}
+
+var peerCmd = &cobra.Command{
+	Use:   "peer",
+	Short: "Add or remove peers. Get your own peering information",
+}
+
+var infoCmd = &cobra.Command{
+	Use:   "info",
+	Short: "print your own peerstring",
+	Run: func(cmd *cobra.Command, args []string) {
+		var result *string
+		err := rpcClient.Call("Query.GetPeerString", 0, &result)
+
+		if err != nil {
+			internal.Log.Error(err.Error())
+			return
+		}
+
+		internal.Log.Info(*result)
+	},
+}
+
+var addPeerCmd = &cobra.Command{
+	Use:   "add",
+	Short: "add a peer",
+	Args:  cobra.RangeArgs(1, 2),
+	Run: func(cmd *cobra.Command, args []string) {
+		var peerGroup string
+		var peerString string
+
+		if len(args) == 1 {
+			peerGroup = "root"
+			peerString = args[0]
+		} else {
+			peerGroup = args[0]
+			peerString = args[1]
+		}
+
+		var success *bool
+		np := rpc.PeerGroupPeer{PeerGroup: peerGroup, Peer: peerString}
+		err := rpcClient.Call("Query.AddPeer", &np, &success)
+
+		if err != nil {
+			internal.Log.Error(err.Error())
+			return
+		}
+
+		if *success {
+			internal.Log.Infof("Added peer: %s", peerString)
+		} else {
+			internal.Log.Infof("Could not add peer: %s", peerString)
+		}
+	},
+}
+
+var removePeerCmd = &cobra.Command{
+	Use:   "remove",
+	Short: "remove a peer",
+	Args:  cobra.RangeArgs(1, 2),
+	Run: func(cmd *cobra.Command, args []string) {
+		var peerGroup string
+		var peerString string
+
+		if len(args) == 1 {
+			peerGroup = "root"
+			peerString = args[0]
+		} else {
+			peerGroup = args[0]
+			peerString = args[1]
+		}
+
+		var success *bool
+		np := rpc.PeerGroupPeer{PeerGroup: peerGroup, Peer: peerString}
+		err := rpcClient.Call("Query.DeletePeer", &np, &success)
+
+		if err != nil {
+			internal.Log.Error(err.Error())
+			return
+		}
+
+		if *success {
+			internal.Log.Infof("Removed peer: %s", peerString)
+		} else {
+			internal.Log.Infof("Could not find peer: %s", peerString)
+		}
+	},
+}
+
+/// TRIGGERS
+
 var triggerCmd = &cobra.Command{
 	Use:   "trigger",
 	Short: "Enable, disable, or test triggers",
@@ -209,7 +385,7 @@ var statusCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.PersistentFlags().StringVar(&dbPath, "db", "", "db path")
+	rootCmd.PersistentFlags().StringVar(&dbPath, "db", "./db", "db path")
 	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "enable debug mode")
 
 	statusCmd.Flags().BoolVar(&showStages, "stages", false, "Show configured Stages")
@@ -219,12 +395,25 @@ func init() {
 	triggerCmd.AddCommand(enableTriggerCmd)
 	triggerCmd.AddCommand(disableTriggerCmd)
 	rootCmd.AddCommand(triggerCmd)
+
+	peerCmd.AddCommand(addPeerCmd)
+	peerCmd.AddCommand(removePeerCmd)
+	peerCmd.AddCommand(infoCmd)
+
+	peerGroupCmd.AddCommand(addPeerGroupCmd)
+	peerGroupCmd.AddCommand(deletePeerGroupCmd)
+	peerGroupCmd.AddCommand(listPeerGroupsCmd)
+
+	remoteCmd.AddCommand(broadcastCmd)
+	remoteCmd.AddCommand(peerCmd)
+	remoteCmd.AddCommand(peerGroupCmd)
+	rootCmd.AddCommand(remoteCmd)
 }
 
 func main() {
 	cobra.OnInitialize(func() {
 		var tmpClient *RPC.Client
-		tmpClient, err := rpc.Receive()
+		tmpClient, err := rpc.Receive(dbPath)
 		rpcClient = tmpClient
 
 		if err != nil {
@@ -233,10 +422,7 @@ func main() {
 		}
 
 		internal.InitLogger()
-
-		if debug {
-			internal.SetVerbose(debug)
-		}
+		internal.SetVerbose(debug)
 	})
 
 	if err := rootCmd.Execute(); err != nil {

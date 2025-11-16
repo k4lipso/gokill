@@ -17,7 +17,7 @@
         "olm-3.2.16"
       ];
     };
-    currentVendorHash = "sha256-k1WTI34jQ04comCTT94RVSgsb+rQP30UAVo2sPPLcVA=";
+    currentVendorHash = "sha256-xJvFWP5ni5dUdAVcQCA8HFT5RpK1/WvnYUfu8xK+L0c=";
   in
   {
 

@@ -1,15 +1,20 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
 
+	pubsub "github.com/libp2p/go-libp2p-pubsub"
+
 	"github.com/k4lipso/gokill/actions"
 	"github.com/k4lipso/gokill/internal"
-	"github.com/k4lipso/gokill/triggers"
+	"github.com/k4lipso/gokill/internal/age"
+	"github.com/k4lipso/gokill/internal/remote"
 	"github.com/k4lipso/gokill/rpc"
+	"github.com/k4lipso/gokill/triggers"
 )
 
 func GetDocumentation() string {
@@ -40,22 +45,89 @@ func GetDocumentation() string {
 func Observe(c triggers.TriggerUpdateChan) {
 	for update := range c {
 		switch update.State {
-			case triggers.Initialized:
-				internal.Log.Debugf("Trigger %s initialized", update.Trigger.GetName())
-			case triggers.Armed:
-				internal.Log.Debugf("Trigger %s armed", update.Trigger.GetName())
-			case triggers.Firing:
-				internal.Log.Debugf("Trigger %s firing", update.Trigger.GetName())
-			case triggers.Failed:
-				internal.Log.Debugf("Trigger %s failed. Reason: %s", update.Trigger.GetName(), update.Error)
-			case triggers.Done:
-				internal.Log.Debugf("Trigger %s done", update.Trigger.GetName())
+		case triggers.Initialized:
+			internal.Log.Debugf("Trigger %s initialized", update.Trigger.GetName())
+		case triggers.Armed:
+			internal.Log.Debugf("Trigger %s armed", update.Trigger.GetName())
+		case triggers.Firing:
+			internal.Log.Debugf("Trigger %s firing", update.Trigger.GetName())
+		case triggers.Failed:
+			internal.Log.Debugf("Trigger %s failed. Reason: %s", update.Trigger.GetName(), update.Error)
+		case triggers.Done:
+			internal.Log.Debugf("Trigger %s done", update.Trigger.GetName())
 		}
 	}
 }
 
-func main() {
+var (
+	dbPath = flag.String("db", "./db", "db file path")
+)
 
+func runRemoteHandler() {
+
+	ctx := context.Background()
+	//data := *dbPath
+
+	internal.Log.Info("Initializing passd")
+	internal.Log.Info("Looking for Keys...")
+	key, err := age.LoadOrGenerateKeys(*dbPath + "/age.key")
+
+	if err != nil {
+		internal.Log.Panic(err.Error())
+	}
+
+	internal.Log.Infof("Found Key: %s", key.Recipient().String())
+	internal.Log.Info("Setting up DHT...")
+
+	h, dht, err := remote.SetupLibp2pHost(ctx, *dbPath)
+
+	if err != nil {
+		internal.Log.Panic(err.Error())
+	}
+
+	internal.Log.Infof("Own ID: %s", h.ID().String())
+
+	ps, err := pubsub.NewGossipSub(ctx, h)
+	if err != nil {
+		internal.Log.Panic(err.Error())
+	}
+
+	internal.Log.Info("Initializing datastore...")
+
+	peerHandler := remote.PeerHandler{
+		Ctx:    ctx,
+		Host:   h,
+		PubSub: ps,
+		Key:    key,
+	}
+
+	configPath := *dbPath + "/config.json"
+	internal.Log.Infof("Loading config from: %s", configPath)
+	Cfg, err := peerHandler.NewConfig(configPath)
+
+	if err != nil {
+		internal.Log.Fatal(err.Error())
+	}
+
+	peerHandler.Config = Cfg
+	peerHandler.ConfigPath = configPath
+
+	internal.Log.Infof("Setting up Vaults...")
+	peerHandler.InitPeerGroups()
+
+	for _, val := range peerHandler.PeerGroups {
+		defer val.Close()
+	}
+
+	internal.Log.Info("Starting peer discovery...")
+
+	internal.Log.Infof("Initialization complete!")
+
+	rpc.PeerHandler = &peerHandler
+	peerHandler.RunBackground(ctx, h, dht)
+}
+
+func main() {
 	configFilePath := flag.String("c", "", "path to config file")
 	showDoc := flag.Bool("d", false, "show doc")
 	testRun := flag.Bool("t", false, "test run")
@@ -111,6 +183,8 @@ func main() {
 		rpc.TriggerList = append(rpc.TriggerList, trigger)
 	}
 
-	rpc.Serve()
-	select{}
+	go runRemoteHandler()
+
+	rpc.Serve(*dbPath)
+	select {}
 }

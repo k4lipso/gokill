@@ -1,6 +1,7 @@
 package rpc
 
 import (
+	"fmt"
 	"net"
 	"net/http"
 	"net/rpc"
@@ -14,6 +15,7 @@ import (
 
 	"github.com/k4lipso/gokill/actions"
 	"github.com/k4lipso/gokill/internal"
+	"github.com/k4lipso/gokill/internal/remote"
 	"github.com/k4lipso/gokill/triggers"
 )
 
@@ -116,14 +118,100 @@ func (t *Query) LoadedTriggers(_ *int, reply *[]TriggerInfo) error {
 	return nil
 }
 
-func Serve() {
+var PeerHandler *remote.PeerHandler
+
+type PeerGroupService struct {
+	PeerGroup string
+	Service   string
+}
+
+type PeerGroupPeer struct {
+	PeerGroup string
+	Peer      string
+}
+
+func (t *Query) Broadcast(peerGroup *PeerGroupService, _ *string) error {
+	val, ok := PeerHandler.PeerGroups[peerGroup.PeerGroup]
+
+	if !ok {
+		return fmt.Errorf("PeerGroup does not exist")
+	}
+
+	return val.Broadcast(peerGroup.Service)
+}
+
+func (t *Query) GetPeerString(_ *int, result *string) error {
+	*result = PeerHandler.Host.ID().String() + "/" + PeerHandler.Key.Recipient().String()
+	return nil
+}
+
+func (t *Query) AddPeer(np *PeerGroupPeer, success *bool) error {
+	peerGroup := np.PeerGroup
+	val, ok := PeerHandler.PeerGroups[peerGroup]
+
+	if !ok {
+		return fmt.Errorf("PeerGroup does not exist")
+	}
+
+	peer, err := remote.PeerFromString(np.Peer)
+
+	if err != nil {
+		internal.Log.Infof("Error parsing peer string: %s\n", err)
+		*success = false
+		return err
+	}
+
+	val.AddPeer(peer)
+	*success = true
+	PeerHandler.UpdateConfig()
+	return nil
+}
+
+func (t *Query) DeletePeer(np *PeerGroupPeer, success *bool) error {
+	peerGroup := np.PeerGroup
+	val, ok := PeerHandler.PeerGroups[peerGroup]
+
+	if !ok {
+		return fmt.Errorf("PeerGroup does not exist")
+	}
+
+	peer, err := remote.PeerFromString(np.Peer)
+
+	if err != nil {
+		internal.Log.Infof("Error parsing peer string: %s\n", err)
+		*success = false
+		return err
+	}
+
+	val.RemovePeer(peer)
+	*success = true
+	PeerHandler.UpdateConfig()
+	return nil
+}
+
+func (t *Query) AddPeerGroup(peerGroup *string, _ *int) error {
+	_, err := PeerHandler.AddPeerGroup(*peerGroup)
+	return err
+}
+
+func (t *Query) DeletePeerGroup(peerGroup *string, _ *int) error {
+	err := PeerHandler.DeletePeerGroup(*peerGroup)
+	return err
+}
+
+func (t *Query) ListPeerGroups(_ *int, reply *[]string) error {
+	*reply = PeerHandler.ListPeerGroups()
+	return nil
+}
+
+func Serve(path string) {
 	query := new(Query)
 	rpc.Register(query)
 	rpc.HandleHTTP()
-	l, err := net.Listen("unix", "/tmp/rpc_test.socket")
+	l, err := net.Listen("unix", path+"/rpc_test.socket")
 
 	if err != nil {
-		internal.Log.Errorf("Error while listening on unix socket: %s", err)
+		internal.Log.Errorf("Error while listening on unix socket: %s\n", err)
 	}
 
 	go http.Serve(l, nil)
@@ -132,17 +220,17 @@ func Serve() {
 	signal.Notify(sigc, os.Interrupt, syscall.SIGTERM)
 	func(ln net.Listener, c chan os.Signal) {
 		sig := <-c
-		internal.Log.Infof("Caught signal %s: shutting down.", sig)
+		internal.Log.Infof("Caught signal %s: shutting down.\n", sig)
 		ln.Close()
 		os.Exit(0)
 	}(l, sigc)
 }
 
-func Receive() (*rpc.Client, error) {
-	client, err := rpc.DialHTTP("unix", "/tmp/rpc_test.socket")
+func Receive(path string) (*rpc.Client, error) {
+	client, err := rpc.DialHTTP("unix", path+"/rpc_test.socket")
 
 	if err != nil {
-		internal.Log.Errorf("Cant connect to RPC server: %s", err)
+		internal.Log.Errorf("Cant connect to RPC server: %s\n", err)
 	}
 
 	return client, err
