@@ -140,6 +140,11 @@ func (t *Query) Broadcast(peerGroup *PeerGroupService, _ *string) error {
 	return val.Broadcast(peerGroup.Service)
 }
 
+func (t *Query) GetOwnPeerId(_ *int, result *string) error {
+	*result = PeerHandler.Host.ID().String()
+	return nil
+}
+
 func (t *Query) GetPeerString(_ *int, result *string) error {
 	*result = PeerHandler.Host.ID().String() + "/" + PeerHandler.Key.Recipient().String()
 	return nil
@@ -199,7 +204,7 @@ func (t *Query) DeletePeerGroup(peerGroup *string, _ *int) error {
 	return err
 }
 
-func (t *Query) ListPeerGroups(_ *int, reply *[]string) error {
+func (t *Query) ListPeerGroups(_ *int, reply *[]remote.PeerGroupConfig) error {
 	*reply = PeerHandler.ListPeerGroups()
 	return nil
 }

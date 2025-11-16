@@ -7,21 +7,25 @@ import (
 	"sort"
 	"time"
 
+	"github.com/libp2p/go-libp2p/core/network"
 	"github.com/spf13/cobra"
 
 	"github.com/pterm/pterm"
 	"github.com/pterm/pterm/putils"
 
+	RPC "net/rpc"
+
 	"github.com/k4lipso/gokill/internal"
+	"github.com/k4lipso/gokill/internal/remote"
 	"github.com/k4lipso/gokill/rpc"
 	"github.com/k4lipso/gokill/triggers"
-	RPC "net/rpc"
 )
 
 var (
 	dbPath     string
 	debug      bool
 	showStages bool
+	showPeers  bool
 	rpcClient  *RPC.Client
 )
 
@@ -36,6 +40,88 @@ var rootCmd = &cobra.Command{
 var remoteCmd = &cobra.Command{
 	Use:   "remote",
 	Short: "Interact with remote settings and state",
+}
+
+var remoteStatusCmd = &cobra.Command{
+	Use:   "status",
+	Short: "Show runtime status of on or more peers",
+	Args:  cobra.MaximumNArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		var reply []remote.PeerGroupConfig
+		var ownPeerId string
+		err := rpcClient.Call("Query.ListPeerGroups", 0, &reply)
+
+		if err != nil {
+			internal.Log.Error(err.Error())
+			return
+		}
+
+		err = rpcClient.Call("Query.GetOwnPeerId", 0, &ownPeerId)
+
+		if err != nil {
+			internal.Log.Error(err.Error())
+			return
+		}
+
+		var peerGroupId string
+		if len(args) == 1 {
+			peerGroupId = args[0]
+		}
+
+		var leveledList pterm.LeveledList
+
+		colorize := func(state network.Connectedness, msg string) string {
+			switch state {
+			case network.NotConnected:
+				return pterm.FgLightRed.Sprint(msg)
+			case network.Connected:
+				return pterm.FgLightGreen.Sprint(msg)
+			case network.Limited:
+				return pterm.FgLightRed.Sprint(msg)
+			default:
+				return msg
+			}
+		}
+
+		peerGroupHeader := func(info remote.PeerGroupConfig) string {
+			tmpStr := fmt.Sprintf("%s - %s", info.Name, info.Id)
+			return tmpStr
+		}
+
+		for _, info := range reply {
+			if len(peerGroupId) > 0 && peerGroupId != info.Id {
+				continue
+			}
+
+			peerGroup := pterm.LeveledListItem{Level: 0, Text: peerGroupHeader(info)}
+			leveledList = append(leveledList, peerGroup)
+
+			if !showPeers {
+				continue
+			}
+
+			peers := info.Peers
+
+			if len(peers) < 1 {
+				continue
+			}
+
+			for _, peer := range peers {
+				if peer.Id == ownPeerId {
+					continue
+				}
+
+				leveledList = append(leveledList, pterm.LeveledListItem{
+					Level: 1,
+					Text:  colorize(peer.ConnectionStatus, "●") + fmt.Sprintf(" %s Status: ", peer.Id) + colorize(peer.ConnectionStatus, peer.ConnectionStatus.String()),
+				})
+			}
+		}
+		root := putils.TreeFromLeveledList(leveledList)
+		root.Text = "/"
+
+		pterm.DefaultTree.WithRoot(root).Render()
+	},
 }
 
 // TODO: Continue here, create 'write' command to write something to the topic and test if its received
@@ -103,7 +189,7 @@ var listPeerGroupsCmd = &cobra.Command{
 	Use:   "list",
 	Short: "list all peerGroups",
 	Run: func(cmd *cobra.Command, args []string) {
-		var reply []string
+		var reply []remote.PeerGroupConfig
 		err := rpcClient.Call("Query.ListPeerGroups", 0, &reply)
 
 		if err != nil {
@@ -112,8 +198,8 @@ var listPeerGroupsCmd = &cobra.Command{
 		}
 
 		internal.Log.Info("PeerGroups:")
-		for _, ns := range reply {
-			internal.Log.Info(ns)
+		for _, peerGroupCfg := range reply {
+			internal.Log.Info(peerGroupCfg.Name)
 		}
 	},
 }
@@ -389,6 +475,7 @@ func init() {
 	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "enable debug mode")
 
 	statusCmd.Flags().BoolVar(&showStages, "stages", false, "Show configured Stages")
+	remoteStatusCmd.Flags().BoolVar(&showPeers, "peers", false, "Show peering status")
 	rootCmd.AddCommand(statusCmd)
 	rootCmd.AddCommand(dumpCmd)
 
@@ -404,6 +491,7 @@ func init() {
 	peerGroupCmd.AddCommand(deletePeerGroupCmd)
 	peerGroupCmd.AddCommand(listPeerGroupsCmd)
 
+	remoteCmd.AddCommand(remoteStatusCmd)
 	remoteCmd.AddCommand(broadcastCmd)
 	remoteCmd.AddCommand(peerCmd)
 	remoteCmd.AddCommand(peerGroupCmd)

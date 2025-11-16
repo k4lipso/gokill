@@ -3,10 +3,10 @@ package remote
 import (
 	"context"
 	"fmt"
-	"time"
 
 	agelib "filippo.io/age"
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
+	"github.com/libp2p/go-libp2p/core/network"
 	"github.com/libp2p/go-libp2p/core/peer"
 
 	. "github.com/k4lipso/gokill/internal"
@@ -21,6 +21,27 @@ type PeerGroup struct {
 	ctx          context.Context
 	Key          *agelib.X25519Identity
 	TrustedPeers []Peer
+}
+
+func (n *PeerGroup) GetPeerById(id string) (Peer, error) {
+	for _, CurrentPeer := range n.TrustedPeers {
+		if CurrentPeer.Id == id {
+			return CurrentPeer, nil
+		}
+	}
+
+	return Peer{}, fmt.Errorf("Peer not found")
+}
+
+func (n *PeerGroup) SetPeerConnectionState(id string, state network.Connectedness) error {
+	for idx, CurrentPeer := range n.TrustedPeers {
+		if CurrentPeer.Id == id {
+			n.TrustedPeers[idx].ConnectionStatus = state
+			return nil
+		}
+	}
+
+	return fmt.Errorf("Peer not found")
 }
 
 func (n *PeerGroup) AddPeer(peer Peer) {
@@ -75,19 +96,6 @@ func (n *PeerGroup) Close() {
 	n.CancelFunc()
 }
 
-func streamConsoleTo(ctx context.Context, topic *pubsub.Topic) {
-	for {
-		s := "Hello World"
-		if err := topic.Publish(ctx, []byte(s)); err != nil {
-			fmt.Println("### Publish error:", err)
-		} else {
-			fmt.Println("Sent hello world")
-		}
-
-		time.Sleep(10 * time.Second)
-	}
-}
-
 func printMessagesFrom(ctx context.Context, sub *pubsub.Subscription, peerGroup *PeerGroup) {
 	for {
 		m, err := sub.Next(ctx)
@@ -105,7 +113,7 @@ func printMessagesFrom(ctx context.Context, sub *pubsub.Subscription, peerGroup 
 }
 
 func CreatePeerGroup(ID string, peerHandler *PeerHandler) (*PeerGroup, error) {
-	Log.Infof("Creating PeerGroup %s\n", ID)
+	Log.Infof("Creating PeerGroup %s", ID)
 	err := peerHandler.PubSub.RegisterTopicValidator(
 		ID, //== topicName
 		func(ctx context.Context, id peer.ID, msg *pubsub.Message) bool {
@@ -132,7 +140,6 @@ func CreatePeerGroup(ID string, peerHandler *PeerHandler) (*PeerGroup, error) {
 	}
 
 	ctx := context.Background()
-	//go streamConsoleTo(ctx, topic)
 
 	sub, err := topic.Subscribe()
 	if err != nil {

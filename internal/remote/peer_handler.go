@@ -85,8 +85,9 @@ func SetupLibp2pHost(ctx context.Context, dbPath string) (host host.Host, dht *d
 }
 
 type Peer struct {
-	Id  string `json:"Id"`
-	Key string `json:"Key"`
+	Id               string `json:"Id"`
+	Key              string `json:"Key"`
+	ConnectionStatus network.Connectedness
 }
 
 type PeerGroupConfig struct {
@@ -251,7 +252,7 @@ func (s *PeerHandler) GetDefaultPeerGroup(Name string) *PeerGroup {
 func (s *PeerHandler) InitPeerGroups() {
 	peerGroupMap := make(map[string]*PeerGroup)
 	Log.Debugf("Init PeerGroups")
-	Log.Debugf("Config: $v", s.Config)
+	Log.Debugf("Config: $s", s.Config)
 	for _, nsCfg := range s.Config {
 		ns1, err := CreatePeerGroup(nsCfg.Id, s)
 
@@ -265,13 +266,14 @@ func (s *PeerHandler) InitPeerGroups() {
 	s.PeerGroups = peerGroupMap
 }
 
-func IsTrustedPeer(ctx context.Context, id peer.ID, peerGroup string, config []PeerGroupConfig) bool {
+func IsTrustedPeer(ctx context.Context, id peer.ID, peerGroupId string, config []PeerGroupConfig) bool {
 	peerMap := GetTrustedPeers(config)
 
-	val, ok := peerMap[peerGroup]
+	val, ok := peerMap[peerGroupId]
 
 	if ok {
 		for _, v := range val {
+			Log.Debugf("Current: %s, Wanted: %s", v.Id, id.String())
 			if v.Id == id.String() {
 				return true
 			}
@@ -281,10 +283,14 @@ func IsTrustedPeer(ctx context.Context, id peer.ID, peerGroup string, config []P
 	return false
 }
 
-func (s *PeerHandler) ListPeerGroups() []string {
-	var result []string
-	for k := range s.PeerGroups {
-		result = append(result, k)
+func (s *PeerHandler) ListPeerGroups() []PeerGroupConfig {
+	var result []PeerGroupConfig
+	for k, v := range s.PeerGroups {
+		result = append(result, PeerGroupConfig{
+			Name:  k,
+			Id:    v.ID,
+			Peers: v.TrustedPeers,
+		})
 	}
 
 	return result
@@ -416,7 +422,13 @@ func (s *PeerHandler) discoverPeers(ctx context.Context, h host.Host, dht *dht.I
 				continue // No self connection
 			}
 
+			if !IsTrustedPeer(timedCtx, peer.ID, v.ID, s.Config) {
+				continue // Only conntect to trusted peers
+			}
+
 			Log.Debugf("Found peer with id %s", peer.ID.String())
+			v.SetPeerConnectionState(peer.ID.String(), h.Network().Connectedness(peer.ID))
+
 			if h.Network().Connectedness(peer.ID) == network.Connected {
 				Log.Debugf("Already connected to %s", peer.ID.String())
 				continue

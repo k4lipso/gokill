@@ -68,7 +68,7 @@ func runRemoteHandler() {
 	ctx := context.Background()
 	//data := *dbPath
 
-	internal.Log.Info("Initializing passd")
+	internal.Log.Info("Initializing gokill remote handler")
 	internal.Log.Info("Looking for Keys...")
 	key, err := age.LoadOrGenerateKeys(*dbPath + "/age.key")
 
@@ -92,8 +92,6 @@ func runRemoteHandler() {
 		internal.Log.Panic(err.Error())
 	}
 
-	internal.Log.Info("Initializing datastore...")
-
 	peerHandler := remote.PeerHandler{
 		Ctx:    ctx,
 		Host:   h,
@@ -112,7 +110,7 @@ func runRemoteHandler() {
 	peerHandler.Config = Cfg
 	peerHandler.ConfigPath = configPath
 
-	internal.Log.Infof("Setting up Vaults...")
+	internal.Log.Infof("Setting up PeerGroups...")
 	peerHandler.InitPeerGroups()
 
 	for _, val := range peerHandler.PeerGroups {
