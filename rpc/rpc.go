@@ -1,31 +1,32 @@
 package rpc
 
 import (
-	"time"
 	"net"
-	"net/rpc"
 	"net/http"
+	"net/rpc"
+	"time"
 
-  "os"
-  "os/signal"
-  "syscall"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/google/uuid"
 
+	"github.com/k4lipso/gokill/actions"
 	"github.com/k4lipso/gokill/internal"
 	"github.com/k4lipso/gokill/triggers"
-	"github.com/k4lipso/gokill/actions"
 )
 
 var TriggerList []*triggers.TriggerHandler
 var DisabledTriggers []*triggers.TriggerHandler
 
 type TriggerInfo struct {
-	Config internal.KillSwitchConfig
+	Config      internal.KillSwitchConfig
 	TimeStarted time.Time
-	TimeFired time.Time
-	Id uuid.UUID
-	Active bool
+	TimeFired   time.Time
+	Id          uuid.UUID
+	Active      bool
+	State       triggers.TriggerState
 }
 
 func (t TriggerInfo) Title() string       { return t.Config.Name }
@@ -57,7 +58,7 @@ func (t *Query) EnableTrigger(id *string, success *bool) error {
 }
 
 func (t *Query) TestAction(conf internal.ActionConfig, result *error) error {
-	internal.Log.Infof("Action Test requested. Type: %s", conf.Type);
+	internal.Log.Infof("Action Test requested. Type: %s", conf.Type)
 
 	actionChan := make(actions.ActionResultChan)
 	action, err := actions.NewSingleAction(conf, actionChan)
@@ -67,7 +68,7 @@ func (t *Query) TestAction(conf internal.ActionConfig, result *error) error {
 		*result = err
 		return err
 	}
-	
+
 	go action.DryExecute()
 	err = <-actionChan
 
@@ -100,11 +101,12 @@ func (t *Query) LoadedTriggers(_ *int, reply *[]TriggerInfo) error {
 	var result []TriggerInfo
 	for _, trigger := range TriggerList {
 		triggerInfo := TriggerInfo{
-			Config: trigger.Config,
+			Config:      trigger.Config,
 			TimeStarted: trigger.TimeStarted,
-			TimeFired: trigger.TimeFired,
-			Id: trigger.Id,
-			Active: trigger.WrappedTrigger.IsEnabled(),
+			TimeFired:   trigger.TimeFired,
+			Id:          trigger.Id,
+			Active:      trigger.WrappedTrigger.IsEnabled(),
+			State:       trigger.State,
 		}
 
 		result = append(result, triggerInfo)
@@ -124,17 +126,16 @@ func Serve() {
 		internal.Log.Errorf("Error while listening on unix socket: %s", err)
 	}
 
-
 	go http.Serve(l, nil)
 
 	sigc := make(chan os.Signal, 1)
-  signal.Notify(sigc, os.Interrupt, syscall.SIGTERM)
-  func(ln net.Listener, c chan os.Signal) {
-    sig := <-c
-    internal.Log.Infof("Caught signal %s: shutting down.", sig)
-    ln.Close()
-    os.Exit(0)
-  }(l, sigc)
+	signal.Notify(sigc, os.Interrupt, syscall.SIGTERM)
+	func(ln net.Listener, c chan os.Signal) {
+		sig := <-c
+		internal.Log.Infof("Caught signal %s: shutting down.", sig)
+		ln.Close()
+		os.Exit(0)
+	}(l, sigc)
 }
 
 func Receive() (*rpc.Client, error) {

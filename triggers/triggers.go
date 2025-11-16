@@ -1,20 +1,20 @@
 package triggers
 
 import (
+	"errors"
 	"fmt"
 	"time"
-	"errors"
 
 	"github.com/google/uuid"
 
-	"github.com/k4lipso/gokill/internal"
 	"github.com/k4lipso/gokill/actions"
+	"github.com/k4lipso/gokill/internal"
 )
 
 type TriggerState int8
 
 const (
-  Initialized TriggerState = iota
+	Initialized TriggerState = iota
 	Test
 	Armed
 	Firing
@@ -23,12 +23,32 @@ const (
 	Disabled
 )
 
-type TriggerDisabledError struct {}
+func (e TriggerState) String() string {
+	switch e {
+	case Initialized:
+		return "Initialized"
+	case Test:
+		return "Test"
+	case Armed:
+		return "Armed"
+	case Firing:
+		return "Firing"
+	case Failed:
+		return "Failed"
+	case Done:
+		return "Done"
+	case Disabled:
+		return "Disabled"
+	default:
+		return fmt.Sprintf("%d", int(e))
+	}
+}
+
+type TriggerDisabledError struct{}
 
 func (e *TriggerDisabledError) Error() string {
 	return "Trigger was disabled"
 }
-
 
 type TriggerUpdate struct {
 	State   TriggerState
@@ -47,7 +67,7 @@ func (o *Observable) Attach(Chan TriggerUpdateChan) {
 }
 
 func (o Observable) Notify(state TriggerState, trigger Trigger, Error error) {
-	o.NotifyUpdate(TriggerUpdate{ state, trigger, Error, })
+	o.NotifyUpdate(TriggerUpdate{state, trigger, Error})
 }
 
 func (o Observable) NotifyUpdate(update TriggerUpdate) {
@@ -61,7 +81,7 @@ func (o Observable) GetLen() int {
 }
 
 func createObservable() Observable {
-	return Observable {
+	return Observable{
 		NotificationChan: []TriggerUpdateChan{},
 	}
 }
@@ -73,7 +93,7 @@ type Observabler interface {
 }
 
 type TriggerBase struct {
-	action actions.Action
+	action  actions.Action
 	enabled bool
 }
 
@@ -85,11 +105,11 @@ func (t *TriggerBase) GetAction() actions.Action {
 	return t.action
 }
 
-func (t *TriggerBase)	IsEnabled() bool {
+func (t *TriggerBase) IsEnabled() bool {
 	return t.enabled
 }
 
-func (t *TriggerBase)	Enable(state bool) {
+func (t *TriggerBase) Enable(state bool) {
 	t.enabled = state
 }
 
@@ -105,45 +125,52 @@ type Trigger interface {
 
 type TriggerHandler struct {
 	Observable
-	Name string
-	Loop bool
+	Name           string
+	Loop           bool
 	WrappedTrigger Trigger
-	Config internal.KillSwitchConfig
-	TimeStarted time.Time
-	TimeFired time.Time
-	Id uuid.UUID
-	Running bool
+	Config         internal.KillSwitchConfig
+	TimeStarted    time.Time
+	TimeFired      time.Time
+	Id             uuid.UUID
+	Running        bool
+	State          TriggerState
 }
 
 func NewTriggerHandler(config internal.KillSwitchConfig) *TriggerHandler {
 	return &TriggerHandler{
 		Observable: createObservable(),
-		Name: config.Name,
-		Loop: config.Loop,
-		Config: config,
-		Id: uuid.New(),
-		Running: false,
+		Name:       config.Name,
+		Loop:       config.Loop,
+		Config:     config,
+		Id:         uuid.New(),
+		Running:    false,
+		State:      Initialized,
 	}
 }
 
-func (t TriggerHandler)	GetName() string {
+func (t TriggerHandler) GetName() string {
 	return t.WrappedTrigger.GetName()
 }
 
-func (t TriggerHandler)	GetDescription() string {
+func (t TriggerHandler) GetDescription() string {
 	return t.WrappedTrigger.GetDescription()
 }
 
-func (t TriggerHandler)	GetExample() string {
+func (t TriggerHandler) GetExample() string {
 	return t.WrappedTrigger.GetExample()
 }
 
-func (t TriggerHandler)	GetOptions() []internal.ConfigOption {
+func (t TriggerHandler) GetOptions() []internal.ConfigOption {
 	return t.WrappedTrigger.GetOptions()
 }
 
 func (t *TriggerHandler) Create(config internal.KillSwitchConfig) (*TriggerHandler, error) {
 	return NewTriggerHandler(config), nil
+}
+
+func (t *TriggerHandler) UpdateState(state TriggerState, err error) {
+	t.State = state
+	t.Notify(state, t.WrappedTrigger, err)
 }
 
 func (t *TriggerHandler) Listen() {
@@ -152,24 +179,24 @@ func (t *TriggerHandler) Listen() {
 
 		defer func() { t.Running = false }()
 
-		t.Notify(Armed, t.WrappedTrigger, nil)
+		t.UpdateState(Armed, nil)
 		t.TimeStarted = time.Now()
 		err := t.WrappedTrigger.Listen()
-		
+
 		if errors.Is(err, &TriggerDisabledError{}) {
-			t.Notify(Failed, t.WrappedTrigger, err)
+			t.UpdateState(Failed, err)
 			return
 		}
 
 		if err != nil {
-			t.Notify(Failed, t.WrappedTrigger, err)
+			t.UpdateState(Failed, err)
 			continue
 		}
 
-		t.Notify(Firing, t.WrappedTrigger, nil)
+		t.UpdateState(Firing, nil)
 		t.TimeFired = time.Now()
 		t.WrappedTrigger.Fire()
-		t.Notify(Done, t.WrappedTrigger, nil)
+		t.UpdateState(Done, nil)
 
 		if !t.Loop {
 			return
