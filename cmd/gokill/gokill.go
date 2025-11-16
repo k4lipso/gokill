@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"time"
 
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 
@@ -164,6 +165,9 @@ func main() {
 		return
 	}
 
+	go runRemoteHandler()
+	time.Sleep(time.Second * 5)
+
 	triggerUpdateChan := make(triggers.TriggerUpdateChan)
 	go Observe(triggerUpdateChan)
 
@@ -181,8 +185,6 @@ func main() {
 		go trigger.Listen()
 		rpc.TriggerList = append(rpc.TriggerList, trigger)
 	}
-
-	go runRemoteHandler()
 
 	rpc.Serve(*dbPath)
 	select {}

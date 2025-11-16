@@ -340,6 +340,16 @@ func (n *PeerHandler) Broadcast(peerGroupName string, msg string) error {
 	return peerGroup.Broadcast(msg)
 }
 
+func (n *PeerHandler) RegisterRemoteTrigger(peerGroupName string, secret string, testSecret string) (chan bool, error) {
+	peerGroup, ok := n.PeerGroups[peerGroupName]
+
+	if !ok {
+		return nil, fmt.Errorf("PeerGroup not found.")
+	}
+
+	return peerGroup.RegisterRemoteTrigger(secret, testSecret)
+}
+
 func initDHT(ctx context.Context, h host.Host) *dht.IpfsDHT {
 	// Start a DHT, for use in peer discovery. We can't just make a new DHT
 	// client because we want each peer to maintain its own local copy of the

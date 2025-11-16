@@ -230,6 +230,7 @@ func GetAllTriggers() []Trigger {
 		&ReceiveTelegram{},
 		&TimeOut{},
 		&UsbDisconnect{},
+		&Remote{},
 	}
 }
 

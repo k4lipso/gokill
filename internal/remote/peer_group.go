@@ -13,14 +13,20 @@ import (
 	age "github.com/k4lipso/gokill/internal/age"
 )
 
+type TriggerChannel struct {
+	IsTest  bool
+	Channel chan bool
+}
+
 type PeerGroup struct {
 	ID    string
 	topic *pubsub.Topic
 	//Registry *sharedKeyRegistry
-	CancelFunc   context.CancelFunc
-	ctx          context.Context
-	Key          *agelib.X25519Identity
-	TrustedPeers []Peer
+	CancelFunc      context.CancelFunc
+	ctx             context.Context
+	Key             *agelib.X25519Identity
+	TrustedPeers    []Peer
+	TriggerChannels map[string]TriggerChannel
 }
 
 func (n *PeerGroup) GetPeerById(id string) (Peer, error) {
@@ -96,6 +102,22 @@ func (n *PeerGroup) Close() {
 	n.CancelFunc()
 }
 
+func (n *PeerGroup) RegisterRemoteTrigger(secret string, testSecret string) (chan bool, error) {
+	channel := make(chan bool)
+
+	n.TriggerChannels[secret] = TriggerChannel{
+		IsTest:  false,
+		Channel: channel,
+	}
+
+	n.TriggerChannels[testSecret] = TriggerChannel{
+		IsTest:  true,
+		Channel: channel,
+	}
+
+	return channel, nil
+}
+
 func printMessagesFrom(ctx context.Context, sub *pubsub.Subscription, peerGroup *PeerGroup) {
 	for {
 		m, err := sub.Next(ctx)
@@ -108,7 +130,18 @@ func printMessagesFrom(ctx context.Context, sub *pubsub.Subscription, peerGroup 
 			panic(err)
 		}
 
+		if m.ReceivedFrom == Handler.Host.ID() {
+			continue
+		}
+
 		fmt.Println(m.ReceivedFrom, ": ", string(msg))
+
+		val, ok := peerGroup.TriggerChannels[string(msg)]
+		if !ok {
+			return
+		}
+
+		val.Channel <- val.IsTest
 	}
 }
 
@@ -153,8 +186,15 @@ func CreatePeerGroup(ID string, peerHandler *PeerHandler) (*PeerGroup, error) {
 		Log.Debug("peerGroup config does not contain any peers")
 	}
 
-	//return nil, fmt.Errorf("ERRORRR")
-	peerGroup := PeerGroup{ID: ID, topic: topic, ctx: ctx, Key: peerHandler.Key, TrustedPeers: val}
+	peerGroup := PeerGroup{
+		ID:              ID,
+		topic:           topic,
+		ctx:             ctx,
+		Key:             peerHandler.Key,
+		TrustedPeers:    val,
+		TriggerChannels: make(map[string]TriggerChannel),
+	}
+
 	go printMessagesFrom(ctx, sub, &peerGroup)
 	return &peerGroup, nil
 }
