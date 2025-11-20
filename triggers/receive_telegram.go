@@ -1,19 +1,19 @@
 package triggers
 
 import (
-	"fmt"
 	"encoding/json"
+	"fmt"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
-	"github.com/k4lipso/gokill/internal"
 	"github.com/k4lipso/gokill/actions"
+	"github.com/k4lipso/gokill/internal"
 )
 
 type ReceiveTelegram struct {
 	TriggerBase
-	Token string `json:"token"`
-	ChatId int64 `json:"chatId"`
+	Token   string `json:"token"`
+	ChatId  int64  `json:"chatId"`
 	Message string `json:"message"`
 }
 
@@ -28,9 +28,6 @@ func (s *ReceiveTelegram) Listen() error {
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
 
-	msg := tgbotapi.NewMessage(-746157642, "BOT TEST MESSAGE")
-	bot.Send(msg)
-
 	chatId := s.ChatId
 	updates := bot.GetUpdatesChan(u)
 	for update := range updates {
@@ -39,13 +36,13 @@ func (s *ReceiveTelegram) Listen() error {
 		}
 
 		if update.Message != nil { // If we got a message
-			if(update.Message.Chat.ID != chatId) {
+			if update.Message.Chat.ID != chatId {
 				internal.LogDoc(s).Debugf("ReceiveTelegram received wrong ChatId. Got %d, wanted %d",
-																	update.Message.Chat.ID, s.ChatId)
-				continue	
+					update.Message.Chat.ID, s.ChatId)
+				continue
 			}
 
-			if(update.Message.Text != s.Message) {
+			if update.Message.Text != s.Message {
 				internal.LogDoc(s).Debug("ReceiveTelegram received wrong Message")
 				continue
 			}
@@ -120,22 +117,22 @@ func (p ReceiveTelegram) GetExample() string {
 func (p ReceiveTelegram) GetOptions() []internal.ConfigOption {
 	return []internal.ConfigOption{
 		{
-			Name: "token",
-			Type: "string",
+			Name:        "token",
+			Type:        "string",
 			Description: "telegram bot token (ask botfather)",
-			Default: "",
+			Default:     "",
 		},
 		{
-			Name: "chatId",
-			Type: "int",
+			Name:        "chatId",
+			Type:        "int",
 			Description: "chatId of group or chat you want the message be received from.",
-			Default: "",
+			Default:     "",
 		},
 		{
-			Name: "message",
-			Type: "string",
+			Name:        "message",
+			Type:        "string",
 			Description: "actual message that, when received, fires the trigger",
-			Default: "",
+			Default:     "",
 		},
 	}
 }
