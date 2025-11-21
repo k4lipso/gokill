@@ -54,17 +54,6 @@
           '';
       };
 
-      gokillSnap = pkgs.snapTools.makeSnap {
-        meta = {
-          name = "gokill";
-          summary = "simple but efficient";
-          description = "this should be longer";
-          architectures = [ "amd64" ];
-          confinement = "classic";
-          apps.gokill.command = "${gokill}/bin/gokill";
-        };
-      };
-
       docs = pkgs.callPackage (import ./docs/default.nix) { self = self; };
 
       default = self.packages.${system}.gokill;
