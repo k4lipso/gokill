@@ -13,9 +13,16 @@ import (
 	age "github.com/k4lipso/gokill/internal/age"
 )
 
+type TriggerMessage int
+
+const (
+	TriggerMessageTest TriggerMessage = iota
+	TriggerMessageTrigger
+)
+
 type TriggerChannel struct {
 	IsTest  bool
-	Channel chan bool
+	Channel chan TriggerMessage
 }
 
 type PeerGroup struct {
@@ -102,8 +109,8 @@ func (n *PeerGroup) Close() {
 	n.CancelFunc()
 }
 
-func (n *PeerGroup) RegisterRemoteTrigger(secret string, testSecret string) (chan bool, error) {
-	channel := make(chan bool)
+func (n *PeerGroup) RegisterRemoteTrigger(secret string, testSecret string) (chan TriggerMessage, error) {
+	channel := make(chan TriggerMessage)
 
 	n.TriggerChannels[secret] = TriggerChannel{
 		IsTest:  false,
@@ -141,7 +148,11 @@ func printMessagesFrom(ctx context.Context, sub *pubsub.Subscription, peerGroup 
 			return
 		}
 
-		val.Channel <- val.IsTest
+		if val.IsTest {
+			val.Channel <- TriggerMessageTest
+		} else {
+			val.Channel <- TriggerMessageTrigger
+		}
 	}
 }
 

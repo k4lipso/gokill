@@ -1,38 +1,42 @@
 package triggers
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
-	"github.com/k4lipso/gokill/actions"
 	"github.com/k4lipso/gokill/internal"
 	"github.com/k4lipso/gokill/internal/remote"
 )
 
 type Remote struct {
-	TriggerBase
 	PeerGroupId string `json:"group"`
 	Secret      string `json:"secret"`
 	TestSecret  string `json:"testSecret"`
 	RemoteChan  chan bool
 }
 
-func (t *Remote) Listen() error {
+func (t *Remote) Init(ctx context.Context) error {
+	return nil
+}
+
+func (t *Remote) Listen(ctx context.Context) (TriggerState, error) {
 	channel, err := remote.Handler.RegisterRemoteTrigger(t.PeerGroupId, t.Secret, t.TestSecret)
 
 	if err != nil {
-		return fmt.Errorf("Could not register remote trigger")
+		return Failed, fmt.Errorf("Could not register remote trigger")
 	}
 
-	//block till message received
-	//TODO: it should be evaluated if testSecret or secret.
-	<-channel
-
-	if !t.enabled {
-		return &TriggerDisabledError{}
+	select {
+	case msg := <-channel:
+		if msg == remote.TriggerMessageTrigger {
+			return Triggered, nil
+		} else {
+			return Test, nil
+		}
+	case <-ctx.Done():
+		return Cancelled, &TriggerCancelledError{}
 	}
-
-	return nil
 }
 
 func (t *Remote) Create(config internal.KillSwitchConfig) (Trigger, error) {
@@ -55,14 +59,6 @@ func (t *Remote) Create(config internal.KillSwitchConfig) (Trigger, error) {
 	if result.TestSecret == "" {
 		return &Remote{}, internal.OptionMissingError{"testSecret"}
 	}
-
-	action, err := actions.NewAction(config.Actions)
-
-	if err != nil {
-		return result, err
-	}
-
-	result.action = action
 
 	return result, nil
 }

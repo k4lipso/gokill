@@ -1,17 +1,16 @@
 package triggers
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
 	"time"
 
-	"github.com/k4lipso/gokill/actions"
 	"github.com/k4lipso/gokill/internal"
 )
 
 type EthernetDisconnect struct {
-	TriggerBase
 	WaitTillConnected bool   `json:"waitTillConnected"`
 	InterfaceName     string `json:"interfaceName"`
 }
@@ -31,30 +30,34 @@ func isEthernetConnected(deviceName string) bool {
 	return true
 }
 
-func (t *EthernetDisconnect) Listen() error {
-	if t.WaitTillConnected {
-		for !isEthernetConnected(t.InterfaceName) {
-			if !t.enabled {
-				return &TriggerDisabledError{}
-			}
-
-			time.Sleep(1 * time.Second)
-		}
+func (t *EthernetDisconnect) Init(ctx context.Context) error {
+	if !t.WaitTillConnected {
+		return nil
 	}
 
 	for {
-		if !t.enabled {
-			return &TriggerDisabledError{}
+		select {
+		case <-time.After(1 * time.Second):
+			if isEthernetConnected(t.InterfaceName) {
+				return nil
+			}
+		case <-ctx.Done():
+			return &TriggerCancelledError{}
 		}
-
-		if !isEthernetConnected(t.InterfaceName) {
-			break
-		}
-
-		time.Sleep(1 * time.Second)
 	}
+}
 
-	return nil
+func (t *EthernetDisconnect) Listen(ctx context.Context) (TriggerState, error) {
+	for {
+		select {
+		case <-time.After(1 * time.Second):
+			if !isEthernetConnected(t.InterfaceName) {
+				return Triggered, nil
+			}
+		case <-ctx.Done():
+			return Cancelled, &TriggerCancelledError{}
+		}
+	}
 }
 
 func CreateEthernetDisconnect(config internal.KillSwitchConfig) (*EthernetDisconnect, error) {
@@ -71,14 +74,6 @@ func CreateEthernetDisconnect(config internal.KillSwitchConfig) (*EthernetDiscon
 	if result.InterfaceName == "" {
 		return &EthernetDisconnect{}, internal.OptionMissingError{"interfaceName"}
 	}
-
-	action, err := actions.NewAction(config.Actions)
-
-	if err != nil {
-		return &EthernetDisconnect{}, err
-	}
-
-	result.action = action
 
 	return result, nil
 }

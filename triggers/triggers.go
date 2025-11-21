@@ -1,7 +1,7 @@
 package triggers
 
 import (
-	"errors"
+	"context"
 	"fmt"
 	"time"
 
@@ -14,23 +14,38 @@ import (
 type TriggerState int8
 
 const (
-	Initialized TriggerState = iota
+	Created TriggerState = iota
+	Initializing
+	Initialized
 	Test
 	Armed
+	Triggered
 	Firing
 	Failed
 	Done
 	Disabled
+	Cancelled
 )
+
+type TriggerEvent struct {
+	State TriggerState
+	Error error
+}
 
 func (e TriggerState) String() string {
 	switch e {
+	case Created:
+		return "Created"
+	case Initializing:
+		return "Initializing"
 	case Initialized:
 		return "Initialized"
 	case Test:
 		return "Test"
 	case Armed:
 		return "Armed"
+	case Triggered:
+		return "Triggered"
 	case Firing:
 		return "Firing"
 	case Failed:
@@ -39,9 +54,17 @@ func (e TriggerState) String() string {
 		return "Done"
 	case Disabled:
 		return "Disabled"
+	case Cancelled:
+		return "Cancelled"
 	default:
 		return fmt.Sprintf("%d", int(e))
 	}
+}
+
+type TriggerCancelledError struct{}
+
+func (e *TriggerCancelledError) Error() string {
+	return "Trigger was cancelled."
 }
 
 type TriggerDisabledError struct{}
@@ -51,9 +74,8 @@ func (e *TriggerDisabledError) Error() string {
 }
 
 type TriggerUpdate struct {
-	State   TriggerState
+	TriggerEvent
 	Trigger Trigger
-	Error   error
 }
 
 type TriggerUpdateChan chan TriggerUpdate
@@ -67,7 +89,10 @@ func (o *Observable) Attach(Chan TriggerUpdateChan) {
 }
 
 func (o Observable) Notify(state TriggerState, trigger Trigger, Error error) {
-	o.NotifyUpdate(TriggerUpdate{state, trigger, Error})
+	o.NotifyUpdate(TriggerUpdate{
+		TriggerEvent: TriggerEvent{State: state, Error: Error},
+		Trigger:      trigger,
+	})
 }
 
 func (o Observable) NotifyUpdate(update TriggerUpdate) {
@@ -92,34 +117,11 @@ type Observabler interface {
 	GetLen() int
 }
 
-type TriggerBase struct {
-	action  actions.Action
-	enabled bool
-}
-
-func (t *TriggerBase) Fire() {
-	actions.Fire(t.action)
-}
-
-func (t *TriggerBase) GetAction() actions.Action {
-	return t.action
-}
-
-func (t *TriggerBase) IsEnabled() bool {
-	return t.enabled
-}
-
-func (t *TriggerBase) Enable(state bool) {
-	t.enabled = state
-}
-
 type Trigger interface {
+	//TODO: rm internal.Documenter, make DocumentedTrigger
 	internal.Documenter
-	Listen() error
-	Fire()
-	GetAction() actions.Action
-	Enable(state bool)
-	IsEnabled() bool
+	Init(context.Context) error
+	Listen(context.Context) (TriggerState, error)
 	Create(internal.KillSwitchConfig) (Trigger, error)
 }
 
@@ -134,6 +136,7 @@ type TriggerHandler struct {
 	Id             uuid.UUID
 	Running        bool
 	State          TriggerState
+	Action         actions.Action
 }
 
 func NewTriggerHandler(config internal.KillSwitchConfig) *TriggerHandler {
@@ -144,23 +147,23 @@ func NewTriggerHandler(config internal.KillSwitchConfig) *TriggerHandler {
 		Config:     config,
 		Id:         uuid.New(),
 		Running:    false,
-		State:      Initialized,
+		State:      Created,
 	}
 }
 
-func (t TriggerHandler) GetName() string {
+func (t *TriggerHandler) GetName() string {
 	return t.WrappedTrigger.GetName()
 }
 
-func (t TriggerHandler) GetDescription() string {
+func (t *TriggerHandler) GetDescription() string {
 	return t.WrappedTrigger.GetDescription()
 }
 
-func (t TriggerHandler) GetExample() string {
+func (t *TriggerHandler) GetExample() string {
 	return t.WrappedTrigger.GetExample()
 }
 
-func (t TriggerHandler) GetOptions() []internal.ConfigOption {
+func (t *TriggerHandler) GetOptions() []internal.ConfigOption {
 	return t.WrappedTrigger.GetOptions()
 }
 
@@ -173,33 +176,56 @@ func (t *TriggerHandler) UpdateState(state TriggerState, err error) {
 	t.Notify(state, t.WrappedTrigger, err)
 }
 
-func (t *TriggerHandler) Listen() {
+func (t *TriggerHandler) Run(ctx context.Context) error {
 	for {
 		t.Running = true
-
 		defer func() { t.Running = false }()
 
-		t.UpdateState(Armed, nil)
-		t.TimeStarted = time.Now()
-		err := t.WrappedTrigger.Listen()
-
-		if errors.Is(err, &TriggerDisabledError{}) {
-			t.UpdateState(Disabled, err)
-			return
-		}
+		t.UpdateState(Initializing, nil)
+		err := t.WrappedTrigger.Init(ctx)
 
 		if err != nil {
 			t.UpdateState(Failed, err)
-			continue
+			return err
+		}
+
+		t.UpdateState(Initialized, nil)
+
+		ch := make(chan TriggerEvent)
+
+		go func() {
+			defer close(ch)
+			state, err := t.WrappedTrigger.Listen(ctx)
+			ch <- TriggerEvent{State: state, Error: err}
+		}()
+
+		t.UpdateState(Armed, nil)
+		t.TimeStarted = time.Now()
+
+		var event TriggerEvent
+		select {
+		case event = <-ch:
+			if event.State == Failed {
+				t.UpdateState(event.State, event.Error)
+				return event.Error
+			}
+		case <-ctx.Done():
+			t.UpdateState(Cancelled, nil)
+			return nil
 		}
 
 		t.UpdateState(Firing, nil)
 		t.TimeFired = time.Now()
-		t.WrappedTrigger.Fire()
+		if event.State == Test {
+			t.Action.DryExecute()
+		} else if event.State == Triggered {
+			t.Action.Execute()
+		}
+
 		t.UpdateState(Done, nil)
 
 		if !t.Loop {
-			return
+			return nil
 		}
 	}
 }
@@ -210,13 +236,21 @@ func NewTrigger(config internal.KillSwitchConfig) (*TriggerHandler, error) {
 	for _, availableTrigger := range GetAllTriggers() {
 		if config.Type == availableTrigger.GetName() {
 			t, err := availableTrigger.Create(config)
-			t.Enable(true)
 
 			if err != nil {
 				return nil, fmt.Errorf("Could not create Trigger, reason: %s", err)
 			}
 
 			result.WrappedTrigger = t
+
+			action, err := actions.NewAction(config.Actions)
+
+			if err != nil {
+				return result, err
+			}
+
+			result.Action = action
+
 			return result, nil
 		}
 	}

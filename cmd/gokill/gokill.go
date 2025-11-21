@@ -64,11 +64,7 @@ var (
 	dbPath = flag.String("db", "./db", "db file path")
 )
 
-func runRemoteHandler() {
-
-	ctx := context.Background()
-	//data := *dbPath
-
+func runRemoteHandler(ctx context.Context) {
 	internal.Log.Info("Initializing gokill remote handler")
 	internal.Log.Info("Looking for Keys...")
 	key, err := age.LoadOrGenerateKeys(*dbPath + "/age.key")
@@ -165,7 +161,10 @@ func main() {
 		return
 	}
 
-	go runRemoteHandler()
+	ctx := context.Background()
+
+	ctxRemote, _ := context.WithCancel(ctx)
+	go runRemoteHandler(ctxRemote)
 	time.Sleep(time.Second * 5)
 
 	triggerUpdateChan := make(triggers.TriggerUpdateChan)
@@ -182,8 +181,12 @@ func main() {
 		internal.Log.Infof("Registered trigger with name: %s", trigger.Name)
 		trigger.Attach(triggerUpdateChan)
 
-		go trigger.Listen()
-		rpc.TriggerList = append(rpc.TriggerList, trigger)
+		ctxTrigger, cancelTrigger := context.WithCancel(ctx)
+		go trigger.Run(ctxTrigger)
+		rpc.TriggerList = append(rpc.TriggerList, rpc.TriggerHandlerWithCancel{
+			Cancel:  cancelTrigger,
+			Trigger: trigger,
+		})
 	}
 
 	rpc.Serve(*dbPath)

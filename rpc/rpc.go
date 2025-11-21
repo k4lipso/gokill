@@ -1,6 +1,7 @@
 package rpc
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"net/http"
@@ -19,8 +20,12 @@ import (
 	"github.com/k4lipso/gokill/triggers"
 )
 
-var TriggerList []*triggers.TriggerHandler
-var DisabledTriggers []*triggers.TriggerHandler
+type TriggerHandlerWithCancel struct {
+	Cancel  context.CancelFunc
+	Trigger *triggers.TriggerHandler
+}
+
+var TriggerList []TriggerHandlerWithCancel
 
 type TriggerInfo struct {
 	Config      internal.KillSwitchConfig
@@ -43,12 +48,13 @@ func (t *Query) EnableTrigger(id *string, success *bool) error {
 
 	//delete trigger from triggerlist, create new one in disabledtriggers
 	for i := len(TriggerList) - 1; i >= 0; i-- {
-		if TriggerList[i].Id.String() == *id {
+		if TriggerList[i].Trigger.Id.String() == *id {
 			internal.Log.Debugf("Enabling Trigger with id: %s", *id)
-			TriggerList[i].WrappedTrigger.Enable(true)
 
-			if TriggerList[i].Running == false {
-				go TriggerList[i].Listen()
+			if TriggerList[i].Trigger.Running == false {
+				ctx, cancel := context.WithCancel(context.Background())
+				TriggerList[i].Cancel = cancel
+				go TriggerList[i].Trigger.Run(ctx)
 			}
 
 			result = true
@@ -86,9 +92,9 @@ func (t *Query) DisableTrigger(id *string, success *bool) error {
 	result = false
 
 	for i := len(TriggerList) - 1; i >= 0; i-- {
-		if TriggerList[i].Id.String() == *id {
+		if TriggerList[i].Trigger.Id.String() == *id {
 			internal.Log.Debugf("Disabling Trigger with id: %s", *id)
-			TriggerList[i].WrappedTrigger.Enable(false)
+			TriggerList[i].Cancel()
 			result = true
 		}
 	}
@@ -101,13 +107,14 @@ func (t *Query) LoadedTriggers(_ *int, reply *[]TriggerInfo) error {
 	internal.Log.Debug("RPC Request: Query::LoadedTriggers")
 
 	var result []TriggerInfo
-	for _, trigger := range TriggerList {
+	for _, triggerWithCancel := range TriggerList {
+		trigger := triggerWithCancel.Trigger
 		triggerInfo := TriggerInfo{
 			Config:      trigger.Config,
 			TimeStarted: trigger.TimeStarted,
 			TimeFired:   trigger.TimeFired,
 			Id:          trigger.Id,
-			Active:      trigger.WrappedTrigger.IsEnabled(),
+			Active:      trigger.Running,
 			State:       trigger.State,
 		}
 
