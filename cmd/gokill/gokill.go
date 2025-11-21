@@ -144,8 +144,6 @@ func main() {
 		return
 	}
 
-	actions.TestRun = *testRun
-
 	configFile, err := os.ReadFile(*configFilePath)
 
 	if err != nil {
@@ -172,6 +170,7 @@ func main() {
 
 	for _, cfg := range f {
 		trigger, err := triggers.NewTrigger(cfg)
+		trigger.TestRun = *testRun
 
 		if err != nil {
 			internal.Log.Errorf("%s", err)

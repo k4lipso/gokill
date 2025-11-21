@@ -60,17 +60,6 @@ func (a StagedActions) executeInternal(f func(Action)) {
 	}
 }
 
-var TestRun bool
-
-func Fire(a Action) {
-	if TestRun {
-		a.DryExecute()
-		return
-	}
-
-	a.Execute()
-}
-
 func (a StagedActions) DryExecute() {
 	a.executeInternal(func(a Action) { a.DryExecute() })
 }

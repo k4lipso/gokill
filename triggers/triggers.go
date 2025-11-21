@@ -137,6 +137,7 @@ type TriggerHandler struct {
 	Running        bool
 	State          TriggerState
 	Action         actions.Action
+	TestRun        bool
 }
 
 func NewTriggerHandler(config internal.KillSwitchConfig) *TriggerHandler {
@@ -148,6 +149,7 @@ func NewTriggerHandler(config internal.KillSwitchConfig) *TriggerHandler {
 		Id:         uuid.New(),
 		Running:    false,
 		State:      Created,
+		TestRun:    false,
 	}
 }
 
@@ -216,7 +218,7 @@ func (t *TriggerHandler) Run(ctx context.Context) error {
 
 		t.UpdateState(Firing, nil)
 		t.TimeFired = time.Now()
-		if event.State == Test {
+		if event.State == Test || t.TestRun {
 			t.Action.DryExecute()
 		} else if event.State == Triggered {
 			t.Action.Execute()
