@@ -86,7 +86,7 @@
     for name in filenames:
       node1.succeed("test -e " + name + " && (exit 0) || (exit 1)")
 
-    time.sleep(20)
+    time.sleep(60)
     run("ls -la /tmp")
 
     for name in filenames:

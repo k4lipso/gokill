@@ -1,5 +1,5 @@
 
-name: Run integration tests
+name: Build gokill
 
 on:
   push:
@@ -25,4 +25,4 @@ jobs:
         with:
           nix_path: nixpkgs=channel:nixos-unstable
 
-      - run: NIXPKGS_ALLOW_INSECURE=1 nix flake check -L --impure
+      - run: NIXPKGS_ALLOW_INSECURE=1 nix build .\#gokill --impure

@@ -14,10 +14,7 @@ A full list of Triggers and Actions with all their configuration options can be 
 ## usage
 If you use NixOS gokill can easily be integrated into your system configuration - scroll down for more info on that.  
 
-For all other linux distributions gokill currently needs to be built and setup manually. This is supposed to change.
-Iam currently working/researching on publishing gokill as [ppa](https://help.launchpad.net/Packaging/PPA) and as snap.
-If you have other recommendations let me know.  
-
+For all other linux distributions gokill currently needs to be built and setup manually.
 
 ``` bash
 # Clone the gokill repository
@@ -35,24 +32,26 @@ go build cmd/gokill/gokill.go
 ## Config Example
 
 gokill is configured using a json file. it consists of a list of triggers, where each of the triggers as a list of 
-actions that will be executed once triggered.
+actions that will be executed once triggered. The example configures gokill to send a message on Telegram and shutdown
+the device as soon as a specific USB drive gets disconnected. In addition to that it locks the screen if an ethernet
+cable is disconnected.
 
-``` json
-[ //list of triggers
+``` nix
+[
     {
-		"type": "UsbDisconnect", //triggers when the given device is disconnected
+		"type": "UsbDisconnect",
 		"name": "First Trigger",
 		"options": {
 			"deviceId": "ata-Samsung_SSD_860_EVO_1TB_S4AALKWJDI102",
-			"waitTillConnected": true //only trigger when usb drive was actually attached before
+			"waitTillConnected": true
 		},
-        "actions": [ //list of actions that will be executed when triggered
+        "actions": [
             {
                 "name": "unixCommand",
                 "options": {
                     "command": "shutdown -h now"
                 },
-                "stage": 2 // defines the order in which actions are triggered.
+                "stage": 2
             },
             {
 		        "type": "SendTelegram",
@@ -62,7 +61,7 @@ actions that will be executed once triggered.
 		        	"message": "attention, intruders got my device!",
 		        	"testMessage": "this is just a test, no worries"
 		        },
-                "stage": 1 //this event is triggered first, then the shutdown
+                "stage": 1
             }
         ]
     },
@@ -76,7 +75,7 @@ actions that will be executed once triggered.
             {
                 "name": "unixCommand",
                 "options": {
-                    "command": "env DISPLAY=:0 sudo su -c i3lock someUser" //example of locking someUser's screen as root
+                    "command": "env DISPLAY=:0 sudo su -c i3lock someUser"
                 }
             }
         ]
@@ -85,7 +84,7 @@ actions that will be executed once triggered.
 ```
 
 ## nix support
-gokill enjoys full nix support. gokill exposes a nix flakes that outputs a gokill package, a nixosModule and more.
+gokill exposes a nix flakes that outputs a gokill package, a nixosModule and more.
 That means you can super easily incorporate gokill into your existing nixosConfigurations. 
 
 ### NixOS Module
@@ -128,43 +127,3 @@ nix run github:k4lipso/gokill#docs
 ``` bash
 nix flake check github:k4lipso/gokill
 ```
-
-## todos
-
-- export snap
-- export ppa
-
-### actions
-- [x] shutdown
-- [ ] wipe ram
-- [ ] ~~send mail~~
-- send chat message
-    - [x] telegram
-    - [x] matrix
-    - [ ] signal
-- [ ] delete data
-- [ ] shred area
-- [x] run command
-- [ ] wordpress post
-- [ ] ipfs command
-- [buskill 'triggers'](https://github.com/BusKill/awesome-buskill-triggers)
-    - [x] [lock-screen](https://github.com/BusKill/buskill-linux/tree/master/triggers)
-    - [x] shutdown
-    - [ ] luks header shredder
-    - [ ] veracrypt self-destruct
-
-### triggers
-- [ ] no internet
-- [x] [pull usb stick](https://github.com/deepakjois/gousbdrivedetector/blob/master/usbdrivedetector_linux.go)
-- [x] ethernet unplugged
-- receive specific chat message
-    - [x] telegram
-    - [ ] matrix
-    - [ ] signal
-- [ ] power adapter disconnected
-- [ ] unix command
-- anyOf
-    - trigger wrapper containing many triggers and fires as soon as one of them
-      is triggered
-- allOf
-- [ ] ipfs trigger

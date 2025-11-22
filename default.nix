@@ -1,6 +1,6 @@
 { pkgs, currentVendorHash, ... }:
 
-pkgs.buildGoModule rec {
+pkgs.buildGoModule {
   pname = "gokill";
   version = "0.5";
   vendorHash = currentVendorHash;
