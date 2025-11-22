@@ -49,7 +49,7 @@ func (n *PeerGroup) GetPeerById(id string) (Peer, error) {
 func (n *PeerGroup) SetPeerConnectionState(id string, state network.Connectedness) error {
 	for idx, CurrentPeer := range n.TrustedPeers {
 		if CurrentPeer.Id == id {
-			n.TrustedPeers[idx].ConnectionStatus = state
+			n.TrustedPeers[idx].connectionStatus = state
 			return nil
 		}
 	}

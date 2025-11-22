@@ -88,7 +88,7 @@ func SetupLibp2pHost(ctx context.Context, dbPath string) (host host.Host, dht *d
 type Peer struct {
 	Id               string `json:"Id"`
 	Key              string `json:"Key"`
-	ConnectionStatus network.Connectedness
+	connectionStatus network.Connectedness
 }
 
 type PeerGroupConfig struct {
