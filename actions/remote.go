@@ -52,8 +52,8 @@ func (p Remote) GetName() string {
 
 func (p Remote) GetDescription() string {
 	return `
-		When executed it sends the secret to the given PeerGroup.
-		If any remote trigger within the PeerGroup is configured for the specified secret it will be triggered.
+When executed it sends the secret to the given PeerGroup.
+If any remote trigger within the PeerGroup is configured for the specified secret it will be triggered.
 	`
 }
 
