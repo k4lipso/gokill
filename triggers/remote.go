@@ -13,7 +13,6 @@ type Remote struct {
 	PeerGroupId string `json:"group"`
 	Secret      string `json:"secret"`
 	TestSecret  string `json:"testSecret"`
-	RemoteChan  chan bool
 }
 
 func (t *Remote) Init(ctx context.Context) error {
@@ -90,7 +89,7 @@ func (p Remote) GetExample() string {
 func (p Remote) GetOptions() []internal.ConfigOption {
 	return []internal.ConfigOption{
 		{"group", "string", "peer group name", "76bf03c7-872b-46fc-baab-d49641798a76"},
-		{"secret", "string", "shared secret with trigger", "SECRET-MESSAGE"},
-		{"testSecret", "string", "shared test secret with trigger", "SECRET-TESTMESSAGE"},
+		{"secret", "string", "shared secret with trigger", ""},
+		{"testSecret", "string", "shared test secret with trigger", ""},
 	}
 }
