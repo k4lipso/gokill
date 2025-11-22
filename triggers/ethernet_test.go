@@ -14,25 +14,25 @@ func TestEthernetDisconnetConfig(t *testing.T) {
 	}
 
 	testConfigs := []EthernetTest{
-		EthernetTest{
+		{
 			testConfig: internal.KillSwitchConfig{
 				Options: []byte("{}"),
 			},
 
-			expectedError:  internal.OptionMissingError{"interfaceName"},
+			expectedError:  internal.OptionMissingError{OptionName: "interfaceName"},
 			expectedResult: EthernetDisconnect{},
 		},
-		EthernetTest{
+		{
 			testConfig: internal.KillSwitchConfig{
 				Options: []byte(`{
 					"waitTillConnected": false
 				}`),
 			},
 
-			expectedError:  internal.OptionMissingError{"interfaceName"},
+			expectedError:  internal.OptionMissingError{OptionName: "interfaceName"},
 			expectedResult: EthernetDisconnect{},
 		},
-		EthernetTest{
+		{
 			testConfig: internal.KillSwitchConfig{
 				Options: []byte(`{
 					"interfaceName": "eth0",
@@ -43,7 +43,7 @@ func TestEthernetDisconnetConfig(t *testing.T) {
 			expectedError:  nil,
 			expectedResult: EthernetDisconnect{WaitTillConnected: false, InterfaceName: "eth0"},
 		},
-		EthernetTest{
+		{
 			testConfig: internal.KillSwitchConfig{
 				Options: []byte(`{
 					"interfaceName": "eth0",
@@ -54,7 +54,7 @@ func TestEthernetDisconnetConfig(t *testing.T) {
 			expectedError:  nil,
 			expectedResult: EthernetDisconnect{WaitTillConnected: true, InterfaceName: "eth0"},
 		},
-		EthernetTest{
+		{
 			testConfig: internal.KillSwitchConfig{
 				Options: []byte("{ \"interfaceName\": \"eth0\" }"),
 			},
