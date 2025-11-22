@@ -253,7 +253,7 @@ func (s *PeerHandler) GetDefaultPeerGroup(Name string) *PeerGroup {
 func (s *PeerHandler) InitPeerGroups() {
 	peerGroupMap := make(map[string]*PeerGroup)
 	Log.Debugf("Init PeerGroups")
-	Log.Debugf("Config: $s", s.Config)
+	Log.Debugf("Config: %s", s.Config)
 	for _, nsCfg := range s.Config {
 		ns1, err := CreatePeerGroup(nsCfg.Id, s)
 
