@@ -70,7 +70,7 @@ in
       description = "gokill daemon";
       serviceConfig = {
         Type = "simple";
-        ExecStart = "${gokill-pkg}/bin/gokill -c ${configFile} ${testRun}";
+        ExecStart = "${gokill-pkg}/bin/gokill --db ./ -c ${configFile} ${testRun}";
         Restart = "on-failure";
       };
 
