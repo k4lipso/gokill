@@ -194,7 +194,7 @@ func (s *PeerHandler) recreateConfig() {
 }
 
 func (s *PeerHandler) writeConfig(filename string, config []PeerGroupConfig) error {
-	jsonData, err := json.Marshal(config)
+	jsonData, err := json.MarshalIndent(config, "", "  ")
 
 	if err != nil {
 		return err
