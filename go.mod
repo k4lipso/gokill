@@ -1,6 +1,6 @@
 module github.com/k4lipso/gokill
 
-go 1.25
+go 1.24.9
 
 require (
 	filippo.io/age v1.2.1
