@@ -17,7 +17,7 @@
         "olm-3.2.16"
       ];
     };
-    currentVendorHash = "sha256-xJvFWP5ni5dUdAVcQCA8HFT5RpK1/WvnYUfu8xK+L0c=";
+    currentVendorHash = "sha256-W9MwTWEIpodyn3k4OKm6q3dlGy9PhFh5r/KuM3HJtQA=";
   in
   {
 
@@ -33,7 +33,7 @@
       ];
     };
 
-    packages = rec {
+    packages = {
       gokill = import ./default.nix { 
         pkgs = pkgs; 
         currentVendorHash = currentVendorHash; 
@@ -112,12 +112,14 @@
       docs = {
         type = "app";
         program = builtins.toString (pkgs.writeScript "docs" ''
+          #!${pkgs.bash}/bin/bash
           ${pkgs.python3}/bin/python3 -m http.server --directory ${self.packages."${system}".docs}/share/doc'');
       };
 
       exportDEB = {
         type = "app";
         program = builtins.toString (pkgs.writeScript "exportdeb" ''
+          #!${pkgs.bash}/bin/bash
           ${pkgs.nix}/bin/nix bundle --bundler .#bundlers.${system}.gokillDeb .#packages.${system}.gokill'');
       };
 
