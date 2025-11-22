@@ -240,10 +240,5 @@ func Serve(path string) {
 
 func Receive(path string) (*rpc.Client, error) {
 	client, err := rpc.DialHTTP("unix", path+"/rpc_test.socket")
-
-	if err != nil {
-		internal.Log.Errorf("Cant connect to RPC server: %s\n", err)
-	}
-
 	return client, err
 }
