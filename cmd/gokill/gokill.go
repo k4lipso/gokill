@@ -127,6 +127,7 @@ func main() {
 	configFilePath := flag.String("c", "", "path to config file")
 	showDoc := flag.Bool("d", false, "show doc")
 	testRun := flag.Bool("t", false, "test run")
+	runRemote := flag.Bool("r", false, "enable remote triggers and actions")
 	verbose := flag.Bool("verbose", false, "log debug info")
 
 	flag.Parse()
@@ -162,8 +163,11 @@ func main() {
 	ctx := context.Background()
 
 	ctxRemote, _ := context.WithCancel(ctx)
-	go runRemoteHandler(ctxRemote)
-	time.Sleep(time.Second * 5)
+
+	if *runRemote {
+		go runRemoteHandler(ctxRemote)
+		time.Sleep(time.Second * 5)
+	}
 
 	triggerUpdateChan := make(triggers.TriggerUpdateChan)
 	go Observe(triggerUpdateChan)
