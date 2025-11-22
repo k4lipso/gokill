@@ -10,11 +10,16 @@ import (
 	"github.com/k4lipso/gokill/internal"
 )
 
+type TelegramBotAPI interface {
+	GetUpdatesChan(config tgbotapi.UpdateConfig) tgbotapi.UpdatesChannel
+}
+
 type ReceiveTelegram struct {
-	Token   string `json:"token"`
-	ChatId  int64  `json:"chatId"`
-	Message string `json:"message"`
-	bot     *tgbotapi.BotAPI
+	Token       string `json:"token"`
+	ChatId      int64  `json:"chatId"`
+	Message     string `json:"message"`
+	TestMessage string `json:"testMessage"`
+	bot         TelegramBotAPI
 }
 
 func (s *ReceiveTelegram) Init(ctx context.Context) error {
@@ -49,13 +54,17 @@ func (s *ReceiveTelegram) Listen(ctx context.Context) (TriggerState, error) {
 						continue
 					}
 
-					if update.Message.Text != s.Message {
-						internal.LogDoc(s).Debug("ReceiveTelegram received wrong Message")
-						continue
+					if update.Message.Text == s.Message {
+						internal.LogDoc(s).Info("ReceiveTelegram received secret message")
+						return Triggered, nil
 					}
 
-					internal.LogDoc(s).Info("ReceiveTelegram received secret message")
-					return Triggered, nil
+					if update.Message.Text == s.TestMessage {
+						internal.LogDoc(s).Info("ReceiveTelegram received test message")
+						return Test, nil
+					}
+
+					internal.LogDoc(s).Debug("ReceiveTelegram received wrong Message")
 				}
 			}
 		}
@@ -83,6 +92,10 @@ func CreateReceiveTelegram(config internal.KillSwitchConfig) (*ReceiveTelegram, 
 
 	if result.Message == "" {
 		return &ReceiveTelegram{}, internal.OptionMissingError{"message"}
+	}
+
+	if result.TestMessage == "" {
+		return &ReceiveTelegram{}, internal.OptionMissingError{"testMessage"}
 	}
 
 	return result, nil
@@ -131,6 +144,12 @@ func (p ReceiveTelegram) GetOptions() []internal.ConfigOption {
 			Name:        "message",
 			Type:        "string",
 			Description: "actual message that, when received, fires the trigger",
+			Default:     "",
+		},
+		{
+			Name:        "testMessage",
+			Type:        "string",
+			Description: "message that, when received, triggers test",
 			Default:     "",
 		},
 	}
