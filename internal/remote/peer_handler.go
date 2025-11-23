@@ -109,8 +109,8 @@ func (p Peer) ToPeerConfig() PeerConfig {
 }
 
 type PeerConfig struct {
-	Id  string
-	Key string
+	Id  string `json:"Id"`
+	Key string `json:"Key"`
 }
 
 type PeerGroupInfo struct {
@@ -159,10 +159,19 @@ func (wg *WhitelistConnectionGater) InterceptUpgraded(conn network.Conn) (allow 
 	return wg.InterceptPeerDial(conn.RemotePeer()), 0
 }
 
-func (p *PeerHandler) GetTrustedPeers() map[string][]Peer {
+func (p *PeerHandler) GetTrustedPeersFromConfig() map[string][]Peer {
 	result := make(map[string][]Peer)
-	for k, v := range p.PeerGroups {
-		result[k] = v.TrustedPeers
+	for _, c := range p.Config {
+		peers := []Peer{}
+
+		for _, peerCfg := range c.Peers {
+			peers = append(peers, Peer{
+				Id:  peerCfg.Id,
+				Key: peerCfg.Key,
+			})
+		}
+
+		result[c.Id] = peers
 	}
 
 	return result
@@ -203,7 +212,11 @@ func (s *PeerHandler) GetSelfPeer() Peer {
 func (s *PeerHandler) UpdateConfig() {
 	Log.Debug("Updating Config...")
 	s.recreateConfig()
-	s.writeConfig(s.ConfigPath, s.Config)
+	s.writeConfig(s.ConfigPath, RemoteConfig{
+		Id:     s.Host.ID().String(),
+		Key:    s.Key.Recipient().String(),
+		Groups: s.Config,
+	})
 }
 
 func (s *PeerHandler) recreateConfig() {
@@ -221,7 +234,7 @@ func (s *PeerHandler) recreateConfig() {
 	//}
 }
 
-func (s *PeerHandler) writeConfig(filename string, config []PeerGroupConfig) error {
+func (s *PeerHandler) writeConfig(filename string, config RemoteConfig) error {
 	jsonData, err := json.MarshalIndent(config, "", "  ")
 
 	if err != nil {
@@ -237,17 +250,22 @@ func (s *PeerHandler) writeConfig(filename string, config []PeerGroupConfig) err
 	return nil
 }
 
+type RemoteConfig struct {
+	Id     string            `json:"id"`
+	Key    string            `json:"key"`
+	Groups []PeerGroupConfig `json:"groups"`
+}
+
 func (s *PeerHandler) NewConfig(filename string) ([]PeerGroupConfig, error) {
 	if _, err := os.Stat(filename); errors.Is(err, os.ErrNotExist) {
-		err := s.writeConfig(filename, []PeerGroupConfig{
-			{
-				Name: "root",
-				Id:   uuid.New().String(),
-				Peers: []PeerConfig{
-					{
-						Id:  s.Host.ID().String(),
-						Key: s.Key.Recipient().String(),
-					},
+		err := s.writeConfig(filename, RemoteConfig{
+			Id:  s.Host.ID().String(),
+			Key: s.Key.Recipient().String(),
+			Groups: []PeerGroupConfig{
+				{
+					Name:  "root",
+					Id:    uuid.New().String(),
+					Peers: []PeerConfig{},
 				},
 			},
 		},
@@ -263,7 +281,7 @@ func (s *PeerHandler) NewConfig(filename string) ([]PeerGroupConfig, error) {
 		return nil, fmt.Errorf("Could not read config file: %s", err)
 	}
 
-	var result []PeerGroupConfig
+	var result RemoteConfig
 	err = json.Unmarshal(content, &result)
 
 	if err != nil {
@@ -271,7 +289,7 @@ func (s *PeerHandler) NewConfig(filename string) ([]PeerGroupConfig, error) {
 	}
 
 	Log.Infof("Loaded config")
-	return result, nil
+	return result.Groups, nil
 }
 
 func (s *PeerHandler) GetDefaultPeerGroup(Name string) *PeerGroup {
@@ -296,9 +314,10 @@ func (s *PeerHandler) InitPeerGroups() {
 }
 
 func (s *PeerHandler) IsTrustedPeer(ctx context.Context, id peer.ID, peerGroupId string) bool {
-	val, ok := s.PeerGroups[peerGroupId]
-
-	if ok {
+	for _, val := range s.PeerGroups {
+		if val.ID != peerGroupId {
+			continue
+		}
 		for _, v := range val.TrustedPeers {
 			Log.Debugf("Current: %s, Wanted: %s", v.Id, id.String())
 			if v.Id == id.String() {

@@ -86,6 +86,8 @@ func (n *PeerGroup) GetRecipients() []string {
 		result = append(result, peer.Key)
 	}
 
+	result = append(result, Handler.GetSelfPeer().Key)
+
 	return result
 }
 
@@ -124,16 +126,19 @@ func (n *PeerGroup) RegisterRemoteTrigger(secret string, testSecret string) (cha
 	return channel, nil
 }
 
-func printMessagesFrom(ctx context.Context, sub *pubsub.Subscription, peerGroup *PeerGroup) {
+func handleMessages(ctx context.Context, sub *pubsub.Subscription, peerGroup *PeerGroup) {
 	for {
 		m, err := sub.Next(ctx)
 		if err != nil {
-			panic(err)
+			Log.Errorf("%v\n", err)
+			continue
 		}
+
 		msg, err := age.Decrypt(m.Message.Data, peerGroup.Key)
 
 		if err != nil {
-			panic(err)
+			Log.Error(err.Error())
+			continue
 		}
 
 		if m.ReceivedFrom == Handler.Host.ID() {
@@ -143,8 +148,9 @@ func printMessagesFrom(ctx context.Context, sub *pubsub.Subscription, peerGroup 
 		fmt.Println(m.ReceivedFrom, ": ", string(msg))
 
 		val, ok := peerGroup.TriggerChannels[string(msg)]
+
 		if !ok {
-			return
+			continue
 		}
 
 		if val.IsTest {
@@ -164,11 +170,12 @@ func CreatePeerGroup(ID string, peerHandler *PeerHandler) (*PeerGroup, error) {
 				return true
 			}
 
-			Log.Debugf("PubSubmsg TOPIC: %s, PEER: %s\n", ID, id)
+			Log.Debugf("PubSubmsg TOPIC: %s, PEER: %s", ID, id)
 			trusted := peerHandler.IsTrustedPeer(ctx, id, ID)
 			if !trusted {
 				Log.Debugf("discarded pubsub message from non trusted source %s\n", id)
 			}
+
 			return trusted
 		},
 	)
@@ -189,7 +196,8 @@ func CreatePeerGroup(ID string, peerHandler *PeerHandler) (*PeerGroup, error) {
 		panic(err)
 	}
 
-	PeerMap := peerHandler.GetTrustedPeers()
+	PeerMap := peerHandler.GetTrustedPeersFromConfig()
+	Log.Debugf("PeerMap: %v", PeerMap)
 	val, ok := PeerMap[ID]
 
 	if !ok {
@@ -205,6 +213,6 @@ func CreatePeerGroup(ID string, peerHandler *PeerHandler) (*PeerGroup, error) {
 		TriggerChannels: make(map[string]TriggerChannel),
 	}
 
-	go printMessagesFrom(ctx, sub, &peerGroup)
+	go handleMessages(ctx, sub, &peerGroup)
 	return &peerGroup, nil
 }
