@@ -220,7 +220,7 @@ func Serve(path string) {
 	query := new(Query)
 	rpc.Register(query)
 	rpc.HandleHTTP()
-	l, err := net.Listen("unix", path+"/rpc_test.socket")
+	l, err := net.Listen("unix", path+"/gokill.socket")
 
 	if err != nil {
 		internal.Log.Errorf("Error while listening on unix socket: %s\n", err)
@@ -239,6 +239,6 @@ func Serve(path string) {
 }
 
 func Receive(path string) (*rpc.Client, error) {
-	client, err := rpc.DialHTTP("unix", path+"/rpc_test.socket")
+	client, err := rpc.DialHTTP("unix", path+"/gokill.socket")
 	return client, err
 }
