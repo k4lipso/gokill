@@ -111,7 +111,8 @@ var broadcastCmd = &cobra.Command{
 		serviceName := args[0]
 
 		peerGroup := rpc.PeerGroupService{PeerGroup: "root", Service: serviceName}
-		err := rpcClient.Call("Query.Broadcast", &peerGroup, "")
+		droppedResult := ""
+		err := rpcClient.Call("Query.Broadcast", &peerGroup, &droppedResult)
 		if err != nil {
 			internal.Log.Error(err.Error())
 		}
