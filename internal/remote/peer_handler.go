@@ -88,13 +88,41 @@ func SetupLibp2pHost(ctx context.Context, dbPath string) (host host.Host, dht *d
 type Peer struct {
 	Id               string `json:"Id"`
 	Key              string `json:"Key"`
-	connectionStatus network.Connectedness
+	ConnectionStatus network.Connectedness
 }
 
-type PeerGroupConfig struct {
+func ToPeerConfigArray(peers []Peer) []PeerConfig {
+	var result []PeerConfig
+
+	for _, peer := range peers {
+		result = append(result, peer.ToPeerConfig())
+	}
+
+	return result
+}
+
+func (p Peer) ToPeerConfig() PeerConfig {
+	return PeerConfig{
+		Id:  p.Id,
+		Key: p.Key,
+	}
+}
+
+type PeerConfig struct {
+	Id  string
+	Key string
+}
+
+type PeerGroupInfo struct {
 	Name  string `json:"Name"`
 	Id    string `json:"Id"`
 	Peers []Peer `json:"Peers"`
+}
+
+type PeerGroupConfig struct {
+	Name  string       `json:"Name"`
+	Id    string       `json:"Id"`
+	Peers []PeerConfig `json:"Peers"`
 }
 
 type Config []PeerGroupConfig
@@ -131,10 +159,10 @@ func (wg *WhitelistConnectionGater) InterceptUpgraded(conn network.Conn) (allow 
 	return wg.InterceptPeerDial(conn.RemotePeer()), 0
 }
 
-func GetTrustedPeers(config []PeerGroupConfig) map[string][]Peer {
+func (p *PeerHandler) GetTrustedPeers() map[string][]Peer {
 	result := make(map[string][]Peer)
-	for _, c := range config {
-		result[c.Id] = c.Peers
+	for k, v := range p.PeerGroups {
+		result[k] = v.TrustedPeers
 	}
 
 	return result
@@ -184,7 +212,7 @@ func (s *PeerHandler) recreateConfig() {
 		newCfg = append(newCfg, PeerGroupConfig{
 			Name:  key,
 			Id:    val.ID,
-			Peers: val.TrustedPeers,
+			Peers: ToPeerConfigArray(val.TrustedPeers),
 		})
 	}
 	s.Config = newCfg
@@ -215,7 +243,7 @@ func (s *PeerHandler) NewConfig(filename string) ([]PeerGroupConfig, error) {
 			{
 				Name: "root",
 				Id:   uuid.New().String(),
-				Peers: []Peer{
+				Peers: []PeerConfig{
 					{
 						Id:  s.Host.ID().String(),
 						Key: s.Key.Recipient().String(),
@@ -267,13 +295,11 @@ func (s *PeerHandler) InitPeerGroups() {
 	s.PeerGroups = peerGroupMap
 }
 
-func IsTrustedPeer(ctx context.Context, id peer.ID, peerGroupId string, config []PeerGroupConfig) bool {
-	peerMap := GetTrustedPeers(config)
-
-	val, ok := peerMap[peerGroupId]
+func (s *PeerHandler) IsTrustedPeer(ctx context.Context, id peer.ID, peerGroupId string) bool {
+	val, ok := s.PeerGroups[peerGroupId]
 
 	if ok {
-		for _, v := range val {
+		for _, v := range val.TrustedPeers {
 			Log.Debugf("Current: %s, Wanted: %s", v.Id, id.String())
 			if v.Id == id.String() {
 				return true
@@ -284,10 +310,10 @@ func IsTrustedPeer(ctx context.Context, id peer.ID, peerGroupId string, config [
 	return false
 }
 
-func (s *PeerHandler) ListPeerGroups() []PeerGroupConfig {
-	var result []PeerGroupConfig
+func (s *PeerHandler) ListPeerGroups() []PeerGroupInfo {
+	var result []PeerGroupInfo
 	for k, v := range s.PeerGroups {
-		result = append(result, PeerGroupConfig{
+		result = append(result, PeerGroupInfo{
 			Name:  k,
 			Id:    v.ID,
 			Peers: v.TrustedPeers,
@@ -443,7 +469,7 @@ func (s *PeerHandler) discoverPeers(ctx context.Context, h host.Host, dht *dht.I
 				continue // No self connection
 			}
 
-			if !IsTrustedPeer(timedCtx, peer.ID, v.ID, s.Config) {
+			if !s.IsTrustedPeer(timedCtx, peer.ID, v.ID) {
 				continue // Only conntect to trusted peers
 			}
 

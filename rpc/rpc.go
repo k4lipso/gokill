@@ -211,7 +211,7 @@ func (t *Query) DeletePeerGroup(peerGroup *string, _ *int) error {
 	return err
 }
 
-func (t *Query) ListPeerGroups(_ *int, reply *[]remote.PeerGroupConfig) error {
+func (t *Query) ListPeerGroups(_ *int, reply *[]remote.PeerGroupInfo) error {
 	*reply = PeerHandler.ListPeerGroups()
 	return nil
 }

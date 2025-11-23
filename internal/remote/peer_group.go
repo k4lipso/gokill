@@ -26,9 +26,8 @@ type TriggerChannel struct {
 }
 
 type PeerGroup struct {
-	ID    string
-	topic *pubsub.Topic
-	//Registry *sharedKeyRegistry
+	ID              string
+	topic           *pubsub.Topic
 	CancelFunc      context.CancelFunc
 	ctx             context.Context
 	Key             *agelib.X25519Identity
@@ -49,7 +48,7 @@ func (n *PeerGroup) GetPeerById(id string) (Peer, error) {
 func (n *PeerGroup) SetPeerConnectionState(id string, state network.Connectedness) error {
 	for idx, CurrentPeer := range n.TrustedPeers {
 		if CurrentPeer.Id == id {
-			n.TrustedPeers[idx].connectionStatus = state
+			n.TrustedPeers[idx].ConnectionStatus = state
 			return nil
 		}
 	}
@@ -166,7 +165,7 @@ func CreatePeerGroup(ID string, peerHandler *PeerHandler) (*PeerGroup, error) {
 			}
 
 			Log.Debugf("PubSubmsg TOPIC: %s, PEER: %s\n", ID, id)
-			trusted := IsTrustedPeer(ctx, id, ID, peerHandler.Config)
+			trusted := peerHandler.IsTrustedPeer(ctx, id, ID)
 			if !trusted {
 				Log.Debugf("discarded pubsub message from non trusted source %s\n", id)
 			}
@@ -190,7 +189,7 @@ func CreatePeerGroup(ID string, peerHandler *PeerHandler) (*PeerGroup, error) {
 		panic(err)
 	}
 
-	PeerMap := GetTrustedPeers(peerHandler.Config)
+	PeerMap := peerHandler.GetTrustedPeers()
 	val, ok := PeerMap[ID]
 
 	if !ok {

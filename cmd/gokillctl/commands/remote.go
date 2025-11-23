@@ -26,7 +26,7 @@ var remoteStatusCmd = &cobra.Command{
 	Short: "Show runtime status of on or more peers",
 	Args:  cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		var reply []remote.PeerGroupConfig
+		var reply []remote.PeerGroupInfo
 		var ownPeerId string
 		err := rpcClient.Call("Query.ListPeerGroups", 0, &reply)
 
@@ -62,7 +62,7 @@ var remoteStatusCmd = &cobra.Command{
 			}
 		}
 
-		peerGroupHeader := func(info remote.PeerGroupConfig) string {
+		peerGroupHeader := func(info remote.PeerGroupInfo) string {
 			tmpStr := fmt.Sprintf("%s - %s", info.Name, info.Id)
 			return tmpStr
 		}

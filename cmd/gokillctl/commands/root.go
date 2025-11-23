@@ -2,7 +2,6 @@ package commands
 
 import (
 	"github.com/spf13/cobra"
-	"os"
 
 	RPC "net/rpc"
 
@@ -26,23 +25,22 @@ var RootCmd = &cobra.Command{
 
 // /// REMOTE COMMANDS
 func init() {
-	internal.InitLogger()
-	internal.SetVerbose(debug)
+	cobra.OnInitialize(func() {
+		internal.InitLogger()
+		internal.SetVerbose(debug)
 
-	var tmpClient *RPC.Client
-	tmpClient, err := rpc.Receive(dbPath)
-	rpcClient = tmpClient
+		var tmpClient *RPC.Client
+		tmpClient, err := rpc.Receive(dbPath)
+		rpcClient = tmpClient
 
-	if err != nil {
-		internal.Log.Error("Could not connect to gokill daemon, make sure it is running.")
-		internal.Log.Errorf("Error: %s", err)
-		os.Exit(1)
-		return
-	}
+		if err != nil {
+			internal.Log.Fatalf("dialing: %s\n", err)
+			return
+		}
+	})
 
 	RootCmd.PersistentFlags().StringVar(&dbPath, "db", "./db", "db path")
 	RootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "enable debug mode")
-
 	statusCmd.Flags().BoolVar(&showStages, "stages", false, "Show configured Stages")
 	remoteStatusCmd.Flags().BoolVar(&showPeers, "peers", false, "Show peering status")
 	RootCmd.AddCommand(statusCmd)
