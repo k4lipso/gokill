@@ -23,7 +23,7 @@ var remoteCmd = &cobra.Command{
 
 var remoteStatusCmd = &cobra.Command{
 	Use:   "status",
-	Short: "Show runtime status of on or more peers",
+	Short: "Show status of one or more groups",
 	Args:  cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		var reply []remote.PeerGroupInfo
@@ -121,13 +121,13 @@ var broadcastCmd = &cobra.Command{
 }
 
 var peerGroupCmd = &cobra.Command{
-	Use:   "peerGroup",
-	Short: "Add, delete or list peerGroups",
+	Use:   "group",
+	Short: "Add, delete or list groups",
 }
 
 var addPeerGroupCmd = &cobra.Command{
 	Use:   "add",
-	Short: "add a peerGroup",
+	Short: "add a group",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		peerGroup := args[0]
@@ -140,13 +140,13 @@ var addPeerGroupCmd = &cobra.Command{
 			return
 		}
 
-		internal.Log.Infof("PeerGroup %s was added\n", peerGroup)
+		internal.Log.Infof("Group %s was added\n", peerGroup)
 	},
 }
 
 var deletePeerGroupCmd = &cobra.Command{
 	Use:   "delete",
-	Short: "delete a peerGroup",
+	Short: "delete a group",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		peerGroup := args[0]
@@ -159,13 +159,13 @@ var deletePeerGroupCmd = &cobra.Command{
 			return
 		}
 
-		internal.Log.Infof("PeerGroup %s was deleted\n", peerGroup)
+		internal.Log.Infof("Group %s was deleted\n", peerGroup)
 	},
 }
 
 var listPeerGroupsCmd = &cobra.Command{
 	Use:   "list",
-	Short: "list all peerGroups",
+	Short: "list all groups",
 	Run: func(cmd *cobra.Command, args []string) {
 		var reply []remote.PeerGroupConfig
 		err := rpcClient.Call("Query.ListPeerGroups", 0, &reply)
@@ -175,7 +175,6 @@ var listPeerGroupsCmd = &cobra.Command{
 			return
 		}
 
-		internal.Log.Info("PeerGroups:")
 		for _, peerGroupCfg := range reply {
 			internal.Log.Info(peerGroupCfg.Name)
 		}
