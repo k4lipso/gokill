@@ -20,6 +20,10 @@ func (t *Remote) Init(ctx context.Context) error {
 }
 
 func (t *Remote) Listen(ctx context.Context) (TriggerState, error) {
+	if remote.Handler == nil {
+		return Failed, fmt.Errorf("Remote Trigger failed to listen, remote handler is not initialized")
+	}
+
 	channel, err := remote.Handler.RegisterRemoteTrigger(t.PeerGroupId, t.Secret, t.TestSecret)
 
 	if err != nil {
