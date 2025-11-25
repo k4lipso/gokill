@@ -14,7 +14,6 @@ import (
 	"github.com/libp2p/go-libp2p"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
-	"github.com/libp2p/go-libp2p/core/control"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/network"
 	"github.com/libp2p/go-libp2p/core/peer"
@@ -30,6 +29,7 @@ import (
 
 	agelib "filippo.io/age"
 	. "github.com/k4lipso/gokill/internal"
+	"github.com/k4lipso/gokill/internal/age"
 )
 
 var (
@@ -127,38 +127,6 @@ type PeerGroupConfig struct {
 
 type Config []PeerGroupConfig
 
-type WhitelistConnectionGater struct {
-	whitelistedPeers map[peer.ID]struct{}
-}
-
-func (wg *WhitelistConnectionGater) InterceptPeerDial(p peer.ID) (allowed bool) {
-	//_, allowed = wg.whitelistedPeers[p]
-	return true
-}
-
-func (wg *WhitelistConnectionGater) InterceptAddrDial(p peer.ID, addr multiaddr.Multiaddr) bool {
-	return wg.InterceptPeerDial(p)
-}
-
-func (wg *WhitelistConnectionGater) InterceptAccept(conn network.ConnMultiaddrs) bool {
-	addr, err := peer.AddrInfoFromP2pAddr(conn.RemoteMultiaddr())
-
-	if err != nil {
-		Log.Debugf("Error InterceptAccept: %s\n", err)
-		return false
-	}
-
-	return wg.InterceptPeerDial(addr.ID)
-}
-
-func (wg *WhitelistConnectionGater) InterceptSecured(direction network.Direction, p peer.ID, conn network.ConnMultiaddrs) (allow bool) {
-	return wg.InterceptPeerDial(p)
-}
-
-func (wg *WhitelistConnectionGater) InterceptUpgraded(conn network.Conn) (allow bool, reason control.DisconnectReason) {
-	return wg.InterceptPeerDial(conn.RemotePeer()), 0
-}
-
 func (p *PeerHandler) GetTrustedPeersFromConfig() map[string][]Peer {
 	result := make(map[string][]Peer)
 	for _, c := range p.Config {
@@ -195,11 +163,69 @@ func PeerFromString(str string) (Peer, error) {
 type PeerHandler struct {
 	Ctx        context.Context
 	Host       host.Host
+	Dht        *dht.IpfsDHT
 	PubSub     *pubsub.PubSub
 	Key        *agelib.X25519Identity
 	Config     []PeerGroupConfig
 	PeerGroups map[string]*PeerGroup
 	ConfigPath string
+}
+
+func CreatePeerHandler(ctx context.Context, cfgPath string) (PeerHandler, error) {
+	Log.Info("Start creation of gokill Peerhandler")
+	Log.Info("Looking for Keys...")
+	key, err := age.LoadOrGenerateKeys(cfgPath + "/age.key")
+
+	if err != nil {
+		return PeerHandler{}, fmt.Errorf("Peerhandler creation failed. Reason: %s", err)
+	}
+
+	Log.Infof("Found Key: %s", key.Recipient().String())
+	Log.Info("Setting up DHT...")
+
+	h, dht, err := SetupLibp2pHost(ctx, cfgPath)
+
+	if err != nil {
+		return PeerHandler{}, fmt.Errorf("Peerhandler creation failed. Reason: %s", err)
+	}
+
+	Log.Infof("Own ID: %s", h.ID().String())
+
+	ps, err := pubsub.NewGossipSub(ctx, h)
+	if err != nil {
+		return PeerHandler{}, fmt.Errorf("Peerhandler creation failed. Reason: %s", err)
+	}
+
+	peerHandler := PeerHandler{
+		Ctx:    ctx,
+		Host:   h,
+		Dht:    dht,
+		PubSub: ps,
+		Key:    key,
+	}
+
+	configPath := cfgPath + "/config.json"
+	Log.Infof("Loading config from: %s", configPath)
+	Cfg, err := peerHandler.LoadOrCreateConfig(configPath)
+
+	if err != nil {
+		return PeerHandler{}, fmt.Errorf("Peerhandler creation failed. Reason: %s", err)
+	}
+
+	peerHandler.Config = Cfg
+	peerHandler.ConfigPath = configPath
+
+	Log.Infof("Setting up PeerGroups...")
+	peerHandler.InitPeerGroups()
+	Log.Infof("Peerhandler creation complete!")
+
+	return peerHandler, nil
+}
+
+func (s *PeerHandler) Close() {
+	for _, val := range s.PeerGroups {
+		defer val.Close()
+	}
 }
 
 func (s *PeerHandler) GetSelfPeer() Peer {
@@ -256,7 +282,7 @@ type RemoteConfig struct {
 	Groups []PeerGroupConfig `json:"groups"`
 }
 
-func (s *PeerHandler) NewConfig(filename string) ([]PeerGroupConfig, error) {
+func (s *PeerHandler) LoadOrCreateConfig(filename string) ([]PeerGroupConfig, error) {
 	if _, err := os.Stat(filename); errors.Is(err, os.ErrNotExist) {
 		err := s.writeConfig(filename, RemoteConfig{
 			Id:  s.Host.ID().String(),
@@ -430,9 +456,10 @@ func (s *PeerHandler) bootstrapPeers(ctx context.Context, h host.Host) {
 	wg.Wait()
 }
 
-func (s *PeerHandler) RunBackground(ctx context.Context, h host.Host, dht *dht.IpfsDHT) {
-	s.bootstrapPeers(ctx, h)
-	s.discoverPeers(ctx, h, dht)
+func (s *PeerHandler) RunBackground(ctx context.Context) {
+	Log.Info("Starting peer discovery...")
+	s.bootstrapPeers(ctx, s.Host)
+	s.discoverPeers(ctx)
 	t := utils.NewBackoffTicker(utils.BackoffInitialInterval(2*time.Minute),
 		utils.BackoffMaxInterval(6*time.Minute))
 	defer t.Stop()
@@ -448,7 +475,7 @@ func (s *PeerHandler) RunBackground(ctx context.Context, h host.Host, dht *dht.I
 
 			endChan := make(chan struct{})
 			go func() {
-				s.discoverPeers(safeTimeout, h, dht)
+				s.discoverPeers(safeTimeout)
 				endChan <- struct{}{}
 			}()
 
@@ -465,12 +492,12 @@ func (s *PeerHandler) RunBackground(ctx context.Context, h host.Host, dht *dht.I
 	}
 }
 
-func (s *PeerHandler) discoverPeers(ctx context.Context, h host.Host, dht *dht.IpfsDHT) error {
+func (s *PeerHandler) discoverPeers(ctx context.Context) error {
 	time.Sleep(2 * time.Second)
 
 	for peerGroupName, v := range s.PeerGroups {
 		Log.Debugf("Announcing PeerGroup \"%s\" with id: %s", peerGroupName, v.ID)
-		routingDiscovery := discovery.NewRoutingDiscovery(dht)
+		routingDiscovery := discovery.NewRoutingDiscovery(s.Dht)
 		routingDiscovery.Advertise(ctx, v.ID)
 
 		Log.Debugf("Start peer discovery...")
@@ -484,7 +511,7 @@ func (s *PeerHandler) discoverPeers(ctx context.Context, h host.Host, dht *dht.I
 		}
 
 		for peer := range peerChan {
-			if peer.ID == h.ID() || len(peer.Addrs) == 0 {
+			if peer.ID == s.Host.ID() || len(peer.Addrs) == 0 {
 				continue // No self connection
 			}
 
@@ -493,16 +520,16 @@ func (s *PeerHandler) discoverPeers(ctx context.Context, h host.Host, dht *dht.I
 			}
 
 			Log.Debugf("Found peer with id %s", peer.ID.String())
-			v.SetPeerConnectionState(peer.ID.String(), h.Network().Connectedness(peer.ID))
+			v.SetPeerConnectionState(peer.ID.String(), s.Host.Network().Connectedness(peer.ID))
 
-			if h.Network().Connectedness(peer.ID) == network.Connected {
+			if s.Host.Network().Connectedness(peer.ID) == network.Connected {
 				Log.Debugf("Already connected to %s", peer.ID.String())
 				continue
 			}
 
 			timeoutCtx, cancel := context.WithTimeout(ctx, time.Second*120)
 			defer cancel()
-			err := h.Connect(timeoutCtx, peer)
+			err := s.Host.Connect(timeoutCtx, peer)
 			if err != nil {
 				Log.Debugf("Failed connecting to %s, error: %s\n", peer.ID, err)
 			} else {
@@ -513,10 +540,6 @@ func (s *PeerHandler) discoverPeers(ctx context.Context, h host.Host, dht *dht.I
 
 	Log.Debug("Peer discovery complete")
 	return nil
-}
-
-func printErr(err error) {
-	Log.Errorf("error: %s", err)
 }
 
 func ConnectedPeers(h host.Host) []*peer.AddrInfo {

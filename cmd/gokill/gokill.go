@@ -8,11 +8,8 @@ import (
 	"os"
 	"time"
 
-	pubsub "github.com/libp2p/go-libp2p-pubsub"
-
 	"github.com/k4lipso/gokill/actions"
 	"github.com/k4lipso/gokill/internal"
-	"github.com/k4lipso/gokill/internal/age"
 	"github.com/k4lipso/gokill/internal/remote"
 	"github.com/k4lipso/gokill/rpc"
 	"github.com/k4lipso/gokill/triggers"
@@ -47,15 +44,15 @@ func Observe(c triggers.TriggerUpdateChan) {
 	for update := range c {
 		switch update.State {
 		case triggers.Initialized:
-			internal.Log.Debugf("Trigger %s initialized", update.Trigger.GetName())
+			internal.Log.Infof("Trigger %s initialized", update.Trigger.GetName())
 		case triggers.Armed:
-			internal.Log.Debugf("Trigger %s armed", update.Trigger.GetName())
+			internal.Log.Infof("Trigger %s armed", update.Trigger.GetName())
 		case triggers.Firing:
-			internal.Log.Debugf("Trigger %s firing", update.Trigger.GetName())
+			internal.Log.Infof("Trigger %s firing", update.Trigger.GetName())
 		case triggers.Failed:
-			internal.Log.Debugf("Trigger %s failed. Reason: %s", update.Trigger.GetName(), update.Error)
+			internal.Log.Errorf("Trigger %s failed. Reason: %s", update.Trigger.GetName(), update.Error)
 		case triggers.Done:
-			internal.Log.Debugf("Trigger %s done", update.Trigger.GetName())
+			internal.Log.Infof("Trigger %s done", update.Trigger.GetName())
 		}
 	}
 }
@@ -65,62 +62,15 @@ var (
 )
 
 func runRemoteHandler(ctx context.Context) {
-	internal.Log.Info("Initializing gokill remote handler")
-	internal.Log.Info("Looking for Keys...")
-	key, err := age.LoadOrGenerateKeys(*dbPath + "/age.key")
+	peerHandler, err := remote.CreatePeerHandler(ctx, *dbPath)
 
 	if err != nil {
-		internal.Log.Panic(err.Error())
+		internal.Log.Errorf("%s", err)
+		return
 	}
 
-	internal.Log.Infof("Found Key: %s", key.Recipient().String())
-	internal.Log.Info("Setting up DHT...")
-
-	h, dht, err := remote.SetupLibp2pHost(ctx, *dbPath)
-
-	if err != nil {
-		internal.Log.Panic(err.Error())
-	}
-
-	internal.Log.Infof("Own ID: %s", h.ID().String())
-
-	ps, err := pubsub.NewGossipSub(ctx, h)
-	if err != nil {
-		internal.Log.Panic(err.Error())
-	}
-
-	peerHandler := remote.PeerHandler{
-		Ctx:    ctx,
-		Host:   h,
-		PubSub: ps,
-		Key:    key,
-	}
-
-	configPath := *dbPath + "/config.json"
-	internal.Log.Infof("Loading config from: %s", configPath)
-	Cfg, err := peerHandler.NewConfig(configPath)
-
-	if err != nil {
-		internal.Log.Fatal(err.Error())
-	}
-
-	peerHandler.Config = Cfg
-	peerHandler.ConfigPath = configPath
-
-	internal.Log.Infof("Setting up PeerGroups...")
-	peerHandler.InitPeerGroups()
-
-	for _, val := range peerHandler.PeerGroups {
-		defer val.Close()
-	}
-
-	internal.Log.Info("Starting peer discovery...")
-
-	internal.Log.Infof("Initialization complete!")
-
-	rpc.PeerHandler = &peerHandler
 	remote.Handler = &peerHandler
-	peerHandler.RunBackground(ctx, h, dht)
+	peerHandler.RunBackground(ctx)
 }
 
 func main() {
@@ -163,7 +113,6 @@ func main() {
 	ctx := context.Background()
 
 	ctxRemote, _ := context.WithCancel(ctx)
-
 	if *runRemote {
 		go runRemoteHandler(ctxRemote)
 		time.Sleep(time.Second * 5)

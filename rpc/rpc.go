@@ -125,8 +125,6 @@ func (t *Query) LoadedTriggers(_ *int, reply *[]TriggerInfo) error {
 	return nil
 }
 
-var PeerHandler *remote.PeerHandler
-
 type PeerGroupService struct {
 	PeerGroup string
 	Service   string
@@ -138,7 +136,7 @@ type PeerGroupPeer struct {
 }
 
 func (t *Query) Broadcast(peerGroup *PeerGroupService, _ *string) error {
-	val, ok := PeerHandler.PeerGroups[peerGroup.PeerGroup]
+	val, ok := remote.Handler.PeerGroups[peerGroup.PeerGroup]
 
 	if !ok {
 		return fmt.Errorf("PeerGroup does not exist")
@@ -148,18 +146,18 @@ func (t *Query) Broadcast(peerGroup *PeerGroupService, _ *string) error {
 }
 
 func (t *Query) GetOwnPeerId(_ *int, result *string) error {
-	*result = PeerHandler.Host.ID().String()
+	*result = remote.Handler.Host.ID().String()
 	return nil
 }
 
 func (t *Query) GetPeerString(_ *int, result *string) error {
-	*result = PeerHandler.Host.ID().String() + "/" + PeerHandler.Key.Recipient().String()
+	*result = remote.Handler.Host.ID().String() + "/" + remote.Handler.Key.Recipient().String()
 	return nil
 }
 
 func (t *Query) AddPeer(np *PeerGroupPeer, success *bool) error {
 	peerGroup := np.PeerGroup
-	val, ok := PeerHandler.PeerGroups[peerGroup]
+	val, ok := remote.Handler.PeerGroups[peerGroup]
 
 	if !ok {
 		return fmt.Errorf("PeerGroup does not exist")
@@ -175,13 +173,13 @@ func (t *Query) AddPeer(np *PeerGroupPeer, success *bool) error {
 
 	val.AddPeer(peer)
 	*success = true
-	PeerHandler.UpdateConfig()
+	remote.Handler.UpdateConfig()
 	return nil
 }
 
 func (t *Query) DeletePeer(np *PeerGroupPeer, success *bool) error {
 	peerGroup := np.PeerGroup
-	val, ok := PeerHandler.PeerGroups[peerGroup]
+	val, ok := remote.Handler.PeerGroups[peerGroup]
 
 	if !ok {
 		return fmt.Errorf("PeerGroup does not exist")
@@ -197,22 +195,22 @@ func (t *Query) DeletePeer(np *PeerGroupPeer, success *bool) error {
 
 	val.RemovePeer(peer)
 	*success = true
-	PeerHandler.UpdateConfig()
+	remote.Handler.UpdateConfig()
 	return nil
 }
 
 func (t *Query) AddPeerGroup(peerGroup *string, _ *int) error {
-	_, err := PeerHandler.AddPeerGroup(*peerGroup)
+	_, err := remote.Handler.AddPeerGroup(*peerGroup)
 	return err
 }
 
 func (t *Query) DeletePeerGroup(peerGroup *string, _ *int) error {
-	err := PeerHandler.DeletePeerGroup(*peerGroup)
+	err := remote.Handler.DeletePeerGroup(*peerGroup)
 	return err
 }
 
 func (t *Query) ListPeerGroups(_ *int, reply *[]remote.PeerGroupInfo) error {
-	*reply = PeerHandler.ListPeerGroups()
+	*reply = remote.Handler.ListPeerGroups()
 	return nil
 }
 
