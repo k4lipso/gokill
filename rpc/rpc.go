@@ -214,6 +214,29 @@ func (t *Query) ListPeerGroups(_ *int, reply *[]remote.PeerGroupInfo) error {
 	return nil
 }
 
+func (t *Query) GetPeerGroupId(name *string, result *string) error {
+	var err error
+	*result, err = remote.Handler.GetPeerGroupIdByName(*name)
+
+	if err != nil {
+		*result = err.Error()
+	}
+
+	return err
+}
+
+func (t *Query) UpdatePeerGroupId(pg *PeerGroupService, result *string) error {
+	err := remote.Handler.UpdatePeerGroupId(pg.PeerGroup, pg.Service)
+
+	if err != nil {
+		*result = err.Error()
+		return err
+	}
+
+	*result = fmt.Sprintf("Updated Id of Group '%s' to '%s'.", pg.PeerGroup, pg.Service)
+	return nil
+}
+
 func Serve(path string) {
 	query := new(Query)
 	rpc.Register(query)

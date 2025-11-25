@@ -229,6 +229,32 @@ func (s *PeerHandler) Close() {
 	}
 }
 
+func (s *PeerHandler) GetPeerGroupIdByName(name string) (string, error) {
+	val, ok := s.PeerGroups[name]
+
+	if !ok {
+		return "", fmt.Errorf("Group with name '%s' does not exist.", name)
+	}
+
+	return val.ID, nil
+}
+
+func (s *PeerHandler) UpdatePeerGroupId(name string, newId string) error {
+	val, ok := s.PeerGroups[name]
+
+	if !ok {
+		return fmt.Errorf("Group with name '%s' does not exist.", name)
+	}
+
+	if len(newId) < MinGroupIdLength {
+		return fmt.Errorf("Group Id Update Failed. Id should have at least %d characters", MinGroupIdLength)
+	}
+
+	val.ID = newId
+	s.UpdateConfig()
+	return nil
+}
+
 func (s *PeerHandler) GetSelfPeer() Peer {
 	return Peer{
 		Id:  s.Host.ID().String(),

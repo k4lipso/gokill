@@ -57,6 +57,8 @@ func init() {
 	peerGroupCmd.AddCommand(addPeerGroupCmd)
 	peerGroupCmd.AddCommand(deletePeerGroupCmd)
 	peerGroupCmd.AddCommand(listPeerGroupsCmd)
+	peerGroupCmd.AddCommand(getPeerGroupIdCmd)
+	peerGroupCmd.AddCommand(updatePeerGroupIdCmd)
 
 	remoteCmd.AddCommand(remoteStatusCmd)
 	remoteCmd.AddCommand(broadcastCmd)

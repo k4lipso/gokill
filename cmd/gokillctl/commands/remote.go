@@ -164,6 +164,49 @@ var deletePeerGroupCmd = &cobra.Command{
 	},
 }
 
+var getPeerGroupIdCmd = &cobra.Command{
+	Use:   "get-id <NAME>",
+	Short: "get group id",
+	Args:  cobra.ExactArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		peerGroup := args[0]
+
+		var result string
+		err := rpcClient.Call("Query.GetPeerGroupId", &peerGroup, &result)
+
+		if err != nil {
+			internal.Log.Error(err.Error())
+			return
+		}
+
+		internal.Log.Infof("%s", result)
+	},
+}
+
+var updatePeerGroupIdCmd = &cobra.Command{
+	Use:   "set-id <NAME> <ID>",
+	Short: "set group id",
+	Args:  cobra.ExactArgs(2),
+	Run: func(cmd *cobra.Command, args []string) {
+		name := args[0]
+		id := args[1]
+		pgService := rpc.PeerGroupService{
+			PeerGroup: name,
+			Service:   id,
+		}
+
+		var result string
+		err := rpcClient.Call("Query.UpdatePeerGroupId", &pgService, &result)
+
+		if err != nil {
+			internal.Log.Error(err.Error())
+			return
+		}
+
+		internal.Log.Infof("%s", result)
+	},
+}
+
 var listPeerGroupsCmd = &cobra.Command{
 	Use:   "list",
 	Short: "list all groups",
