@@ -33,8 +33,9 @@ import (
 )
 
 var (
-	Listen  = libp2p.ListenAddrStrings("/ip4/0.0.0.0/tcp/0")
-	Handler *PeerHandler
+	Listen           = libp2p.ListenAddrStrings("/ip4/0.0.0.0/tcp/0")
+	Handler          *PeerHandler
+	MinGroupIdLength = 32
 )
 
 func SetupLibp2pHost(ctx context.Context, dbPath string) (host host.Host, dht *dht.IpfsDHT, err error) {
@@ -312,6 +313,15 @@ func (s *PeerHandler) LoadOrCreateConfig(filename string) ([]PeerGroupConfig, er
 
 	if err != nil {
 		return nil, fmt.Errorf("Could not parse config file: %s", err)
+	}
+
+	for _, GroupCfg := range result.Groups {
+		if len(GroupCfg.Id) < MinGroupIdLength {
+			return nil,
+				fmt.Errorf("Could not load config. Id of Group '%s' too short. Must be at least %d characters",
+					GroupCfg.Name,
+					MinGroupIdLength)
+		}
 	}
 
 	Log.Infof("Loaded config")
