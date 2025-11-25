@@ -2,6 +2,7 @@ package actions
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/k4lipso/gokill/internal"
 	"github.com/k4lipso/gokill/internal/remote"
@@ -23,6 +24,10 @@ func (t Remote) Execute() {
 }
 
 func (t Remote) Create(config internal.ActionConfig, c ActionResultChan) (Action, error) {
+	if remote.Handler == nil {
+		return Remote{}, fmt.Errorf("Failed to create Remote Action: Remote Handler is not initialized")
+	}
+
 	var result Remote
 	err := json.Unmarshal(config.Options, &result)
 
