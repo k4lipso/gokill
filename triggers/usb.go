@@ -1,19 +1,18 @@
 package triggers
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"os"
 	"time"
 
-	"github.com/k4lipso/gokill/actions"
 	"github.com/k4lipso/gokill/internal"
 )
 
 type UsbDisconnect struct {
 	WaitTillConnected bool   `json:"waitTillConnected"`
 	DeviceName        string `json:"deviceName"`
-	action            actions.Action
 }
 
 func isUsbConnected(deviceName string) bool {
@@ -28,29 +27,35 @@ func isUsbConnected(deviceName string) bool {
 	return true
 }
 
-func (t *UsbDisconnect) Listen() error {
-	if t.WaitTillConnected {
-		for !isUsbConnected(t.DeviceName) {
-			time.Sleep(1 * time.Second)
-		}
-
-		internal.LogDoc(t).Infof("Device %s detected.", t.DeviceName)
-		internal.LogDoc(t).Notice("Trigger is Armed")
+func (t *UsbDisconnect) Init(ctx context.Context) error {
+	if !t.WaitTillConnected {
+		return nil
 	}
 
 	for {
-		if !isUsbConnected(t.DeviceName) {
-			break
+		select {
+		case <-time.After(1 * time.Second):
+			if isUsbConnected(t.DeviceName) {
+				internal.LogDoc(t).Infof("Device %s detected.", t.DeviceName)
+				return nil
+			}
+		case <-ctx.Done():
+			return &TriggerCancelledError{}
 		}
-
-		time.Sleep(1 * time.Second)
 	}
-
-	return nil
 }
 
-func (t *UsbDisconnect) Fire() {
-	actions.Fire(t.action)
+func (t *UsbDisconnect) Listen(ctx context.Context) (TriggerState, error) {
+	for {
+		select {
+		case <-time.After(1 * time.Second):
+			if !isUsbConnected(t.DeviceName) {
+				return Triggered, nil
+			}
+		case <-ctx.Done():
+			return Cancelled, &TriggerCancelledError{}
+		}
+	}
 }
 
 func CreateUsbDisconnect(config internal.KillSwitchConfig) (*UsbDisconnect, error) {
@@ -67,14 +72,6 @@ func CreateUsbDisconnect(config internal.KillSwitchConfig) (*UsbDisconnect, erro
 	if result.DeviceName == "" {
 		return result, internal.OptionMissingError{"deviceName"}
 	}
-
-	action, err := actions.NewAction(config.Actions)
-
-	if err != nil {
-		return result, err
-	}
-
-	result.action = action
 
 	return result, nil
 }
@@ -108,7 +105,6 @@ func (p UsbDisconnect) GetExample() string {
 	}
 	`
 }
-
 
 func (p UsbDisconnect) GetOptions() []internal.ConfigOption {
 	return []internal.ConfigOption{

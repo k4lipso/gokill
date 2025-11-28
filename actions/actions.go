@@ -12,6 +12,7 @@ type ActionResultChan chan error
 type Action interface {
 	Execute()
 	DryExecute()
+	GetActionChan() ActionResultChan
 	Create(internal.ActionConfig, ActionResultChan) (Action, error)
 }
 
@@ -24,10 +25,18 @@ type Stage struct {
 	Actions []Action
 }
 
-type StagedActions struct {
+type ActionType struct {
 	ActionChan ActionResultChan
+}
+
+func (a ActionType) GetActionChan() ActionResultChan {
+	return a.ActionChan
+}
+
+type StagedActions struct {
 	StageCount int
 	Stages     []Stage
+	ActionType
 }
 
 func (a StagedActions) executeInternal(f func(Action)) {
@@ -49,17 +58,6 @@ func (a StagedActions) executeInternal(f func(Action)) {
 			}
 		}
 	}
-}
-
-var TestRun bool
-
-func Fire(a Action) {
-	if TestRun {
-		a.DryExecute()
-		return
-	}
-
-	a.Execute()
 }
 
 func (a StagedActions) DryExecute() {
@@ -89,7 +87,12 @@ func NewAction(config []internal.ActionConfig) (Action, error) {
 		return config[i].Stage < config[j].Stage
 	})
 
-	stagedActions := StagedActions{make(ActionResultChan), 0, []Stage{}}
+	stagedActions := StagedActions{
+		StageCount: 0,
+		Stages:     []Stage{},
+	}
+
+	stagedActions.ActionChan = make(ActionResultChan)
 
 	stageMap := make(map[int][]Action)
 
@@ -127,7 +130,20 @@ func GetAllActions() []DocumentedAction {
 		SendMatrix{},
 		SendTelegram{},
 		TimeOut{},
+		Remote{},
 	}
+}
+
+func GetActionByType(actionType string) DocumentedAction {
+	actions := GetAllActions()
+
+	for _, action := range actions {
+		if action.GetName() == actionType {
+			return action
+		}
+	}
+
+	return nil
 }
 
 func GetDocumenters() []internal.Documenter {

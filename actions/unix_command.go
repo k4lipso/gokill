@@ -10,17 +10,17 @@ import (
 )
 
 type Command struct {
-	Command    string   `json:"command"`
-	ActionChan ActionResultChan
+	Command string `json:"command"`
+	ActionType
 }
 
 func isCommandAvailable(name string) bool {
-  cmd := exec.Command("/bin/sh", "-c", "command -v "+name)
-  if err := cmd.Run(); err != nil {
+	cmd := exec.Command("/bin/sh", "-c", "command -v "+name)
+	if err := cmd.Run(); err != nil {
 		return false
-  }
+	}
 
-  return true
+	return true
 }
 
 func (c Command) DryExecute() {

@@ -1,29 +1,32 @@
 package triggers
+
 import (
+	"context"
 	"encoding/json"
 	"time"
 
-	"github.com/k4lipso/gokill/actions"
 	"github.com/k4lipso/gokill/internal"
 )
 
 type TimeOut struct {
 	Duration int
-	action   actions.Action
 }
 
-func (t *TimeOut) Listen() error {
-	internal.LogDoc(t).Info("BLUB")
-	internal.LogDoc(t).Info("TimeOut listens")
-	internal.LogDoc(t).Infof("%d", t.Duration)
-	time.Sleep(time.Duration(t.Duration) * time.Second)
-	internal.LogDoc(t).Notice("TimeOut fires")
-
+func (t *TimeOut) Init(ctx context.Context) error {
 	return nil
 }
 
-func (t *TimeOut) Fire() {
-	actions.Fire(t.action)
+func (t *TimeOut) Listen(ctx context.Context) (TriggerState, error) {
+	internal.LogDoc(t).Info("TimeOut listens")
+	internal.LogDoc(t).Infof("%d", t.Duration)
+
+	select {
+	case <-time.After(time.Duration(t.Duration) * time.Second):
+		internal.LogDoc(t).Notice("TimeOut fires")
+		return Triggered, nil
+	case <-ctx.Done():
+		return Cancelled, nil
+	}
 }
 
 func (t *TimeOut) Create(config internal.KillSwitchConfig) (Trigger, error) {
@@ -34,14 +37,6 @@ func (t *TimeOut) Create(config internal.KillSwitchConfig) (Trigger, error) {
 	if err != nil {
 		return result, err
 	}
-
-	action, err := actions.NewAction(config.Actions)
-
-	if err != nil {
-		return result, err
-	}
-
-	result.action = action
 
 	return result, nil
 }

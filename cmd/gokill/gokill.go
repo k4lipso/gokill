@@ -1,13 +1,17 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/k4lipso/gokill/actions"
 	"github.com/k4lipso/gokill/internal"
+	"github.com/k4lipso/gokill/internal/remote"
+	"github.com/k4lipso/gokill/rpc"
 	"github.com/k4lipso/gokill/triggers"
 )
 
@@ -39,25 +43,41 @@ func GetDocumentation() string {
 func Observe(c triggers.TriggerUpdateChan) {
 	for update := range c {
 		switch update.State {
-			case triggers.Initialized:
-				internal.Log.Debugf("Trigger %s initialized", update.Trigger.GetName())
-			case triggers.Armed:
-				internal.Log.Debugf("Trigger %s armed", update.Trigger.GetName())
-			case triggers.Firing:
-				internal.Log.Debugf("Trigger %s firing", update.Trigger.GetName())
-			case triggers.Failed:
-				internal.Log.Debugf("Trigger %s failed. Reason: %s", update.Trigger.GetName(), update.Error)
-			case triggers.Done:
-				internal.Log.Debugf("Trigger %s done", update.Trigger.GetName())
+		case triggers.Initialized:
+			internal.Log.Infof("Trigger %s initialized", update.Trigger.GetName())
+		case triggers.Armed:
+			internal.Log.Infof("Trigger %s armed", update.Trigger.GetName())
+		case triggers.Firing:
+			internal.Log.Infof("Trigger %s firing", update.Trigger.GetName())
+		case triggers.Failed:
+			internal.Log.Errorf("Trigger %s failed. Reason: %s", update.Trigger.GetName(), update.Error)
+		case triggers.Done:
+			internal.Log.Infof("Trigger %s done", update.Trigger.GetName())
 		}
 	}
 }
 
-func main() {
+var (
+	dbPath = flag.String("db", "./db", "db file path")
+)
 
+func runRemoteHandler(ctx context.Context) {
+	peerHandler, err := remote.CreatePeerHandler(ctx, *dbPath)
+
+	if err != nil {
+		internal.Log.Errorf("%s", err)
+		return
+	}
+
+	remote.Handler = &peerHandler
+	peerHandler.RunBackground(ctx)
+}
+
+func main() {
 	configFilePath := flag.String("c", "", "path to config file")
 	showDoc := flag.Bool("d", false, "show doc")
 	testRun := flag.Bool("t", false, "test run")
+	runRemote := flag.Bool("r", false, "enable remote triggers and actions")
 	verbose := flag.Bool("verbose", false, "log debug info")
 
 	flag.Parse()
@@ -75,8 +95,6 @@ func main() {
 		return
 	}
 
-	actions.TestRun = *testRun
-
 	configFile, err := os.ReadFile(*configFilePath)
 
 	if err != nil {
@@ -92,25 +110,37 @@ func main() {
 		return
 	}
 
+	ctx := context.Background()
+
+	ctxRemote, _ := context.WithCancel(ctx)
+	if *runRemote {
+		go runRemoteHandler(ctxRemote)
+		time.Sleep(time.Second * 5)
+	}
+
 	triggerUpdateChan := make(triggers.TriggerUpdateChan)
 	go Observe(triggerUpdateChan)
 
-	var triggerList []*triggers.TriggerHandler
 	for _, cfg := range f {
 		trigger, err := triggers.NewTrigger(cfg)
-		internal.Log.Infof("Registered trigger with name: %s", trigger.Name)
+		trigger.TestRun = *testRun
 
 		if err != nil {
 			internal.Log.Errorf("%s", err)
 			return
 		}
 
+		internal.Log.Infof("Registered trigger with name: %s", trigger.Name)
 		trigger.Attach(triggerUpdateChan)
 
-		internal.Log.Infof("HAHA")
-		go trigger.Listen()
-		triggerList = append(triggerList, trigger)
+		ctxTrigger, cancelTrigger := context.WithCancel(ctx)
+		go trigger.Run(ctxTrigger)
+		rpc.TriggerList = append(rpc.TriggerList, rpc.TriggerHandlerWithCancel{
+			Cancel:  cancelTrigger,
+			Trigger: trigger,
+		})
 	}
 
-	select{}
+	rpc.Serve(*dbPath)
+	select {}
 }

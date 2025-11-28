@@ -1,8 +1,8 @@
 package actions
 
 import (
-	"fmt"
 	"encoding/json"
+	"fmt"
 
 	"context"
 	"errors"
@@ -12,23 +12,23 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 
 	"maunium.net/go/mautrix"
-	"maunium.net/go/mautrix/id"
 	"maunium.net/go/mautrix/crypto/cryptohelper"
+	"maunium.net/go/mautrix/id"
 
 	"github.com/k4lipso/gokill/internal"
 )
 
 type SendMatrix struct {
-	Homeserver string `json:"homeserver"`
-	Username string `json:"username"`
-	Password string `json:"password"`
-	Token string `json:"token"`
-	DeviceID string `json:"deviceId"`
-	Database string `json:"database"`
-	RoomId string `json:"roomId"`
-	Message string `json:"message"`
+	Homeserver  string `json:"homeserver"`
+	Username    string `json:"username"`
+	Password    string `json:"password"`
+	Token       string `json:"token"`
+	DeviceID    string `json:"deviceId"`
+	Database    string `json:"database"`
+	RoomId      string `json:"roomId"`
+	Message     string `json:"message"`
 	TestMessage string `json:"testMessage"`
-	ActionChan ActionResultChan
+	ActionType
 }
 
 func (s SendMatrix) sendMessage(message string) error {
@@ -55,7 +55,7 @@ func (s SendMatrix) sendMessage(message string) error {
 		}
 	}
 
-	err = cryptoHelper.Init(context.Background())
+	err = cryptoHelper.Init()
 	if err != nil {
 		return err
 	}
@@ -76,7 +76,7 @@ func (s SendMatrix) sendMessage(message string) error {
 	}()
 
 	time.Sleep(5 * time.Second)
-	resp, err := client.SendText(context.Background(), id.RoomID(s.RoomId), message)
+	resp, err := client.SendText(id.RoomID(s.RoomId), message)
 
 	if err != nil {
 		return fmt.Errorf("Failed to send event")
@@ -97,7 +97,7 @@ func (s SendMatrix) sendMessage(message string) error {
 
 func (s SendMatrix) DryExecute() {
 	internal.LogDoc(s).Info("SendMatrix: Trying to send test message")
-	err := s.sendMessage(s.TestMessage)	
+	err := s.sendMessage(s.TestMessage)
 
 	if err != nil {
 		internal.LogDoc(s).Info("SendMatrix: failed to send test message")
@@ -108,7 +108,7 @@ func (s SendMatrix) DryExecute() {
 
 func (s SendMatrix) Execute() {
 	internal.LogDoc(s).Info("SendMatrix: Trying to send message")
-	err := s.sendMessage(s.Message)	
+	err := s.sendMessage(s.Message)
 
 	if err != nil {
 		internal.LogDoc(s).Info("SendMatrix: failed to send message")
@@ -195,58 +195,58 @@ func (p SendMatrix) GetExample() string {
 func (p SendMatrix) GetOptions() []internal.ConfigOption {
 	return []internal.ConfigOption{
 		{
-			Name: "homeserver",
-			Type: "string",
+			Name:        "homeserver",
+			Type:        "string",
 			Description: "homeserver address.",
-			Default: "",
+			Default:     "",
 		},
 		{
-			Name: "username",
-			Type: "string",
+			Name:        "username",
+			Type:        "string",
 			Description: "username (localpart, wihout homeserver address)",
-			Default: "",
+			Default:     "",
 		},
 		{
-			Name: "password",
-			Type: "string",
+			Name:        "password",
+			Type:        "string",
 			Description: "password in clear text",
-			Default: "",
+			Default:     "",
 		},
 		{
-			Name: "token",
-			Type: "string",
+			Name:        "token",
+			Type:        "string",
 			Description: "access token in clear text",
-			Default: "",
+			Default:     "",
 		},
 		{
-			Name: "deviceId",
-			Type: "string",
+			Name:        "deviceId",
+			Type:        "string",
 			Description: "A device id. Example: ZDBLQAQLJH",
-			Default: "",
+			Default:     "",
 		},
 		{
-			Name: "database",
-			Type: "string",
+			Name:        "database",
+			Type:        "string",
 			Description: "path to database file, will be created if not existing. this is necessary to sync keys for encryption.",
-			Default: "",
+			Default:     "",
 		},
 		{
-			Name: "roomId",
-			Type: "string",
+			Name:        "roomId",
+			Type:        "string",
 			Description: "",
-			Default: "",
+			Default:     "",
 		},
 		{
-			Name: "message",
-			Type: "string",
+			Name:        "message",
+			Type:        "string",
 			Description: "actual message that should be sent",
-			Default: "",
+			Default:     "",
 		},
 		{
-			Name: "testMessage",
-			Type: "string",
+			Name:        "testMessage",
+			Type:        "string",
 			Description: "message sent during test run",
-			Default: "",
+			Default:     "",
 		},
 	}
 }

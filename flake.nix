@@ -10,11 +10,18 @@
   nixpkgs.lib.attrsets.recursiveUpdate 
   (utils.lib.eachSystem (utils.lib.defaultSystems) ( system:
   let
-    pkgs = nixpkgs.legacyPackages.${system};
-    currentVendorHash = "sha256-oMBHRcXxpoTjNkCnqQeSTkIQIdnBXv1vE267vQF47zY=";
+    pkgs = import nixpkgs {
+      inherit system;
+      config.permittedInsecurePackages = [
+        "olm-3.2.16"
+      ];
+    };
+    currentVendorHash = "sha256-6OS491wgLYADzUoBChE249OUZcMVKpc/mcd6EZxi/Bc=";
   in
   {
+
     devShells.default = pkgs.mkShell {
+
       packages = with pkgs; [
         go
         gotools
@@ -25,13 +32,13 @@
       ];
     };
 
-    packages = rec {
+    packages = {
       gokill = import ./default.nix { 
         pkgs = pkgs; 
         currentVendorHash = currentVendorHash; 
       };
 
-      gokill-docbuilder = pkgs.buildGoModule rec {
+      gokill-docbuilder = pkgs.buildGoModule {
         pname = "docbuilder";
         version = "1.0";
         vendorHash = currentVendorHash;
@@ -104,12 +111,14 @@
       docs = {
         type = "app";
         program = builtins.toString (pkgs.writeScript "docs" ''
+          #!${pkgs.bash}/bin/bash
           ${pkgs.python3}/bin/python3 -m http.server --directory ${self.packages."${system}".docs}/share/doc'');
       };
 
       exportDEB = {
         type = "app";
         program = builtins.toString (pkgs.writeScript "exportdeb" ''
+          #!${pkgs.bash}/bin/bash
           ${pkgs.nix}/bin/nix bundle --bundler .#bundlers.${system}.gokillDeb .#packages.${system}.gokill'');
       };
 

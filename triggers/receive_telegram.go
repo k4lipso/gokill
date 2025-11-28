@@ -1,23 +1,28 @@
 package triggers
 
 import (
-	"fmt"
+	"context"
 	"encoding/json"
+	"fmt"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
 	"github.com/k4lipso/gokill/internal"
-	"github.com/k4lipso/gokill/actions"
 )
 
-type ReceiveTelegram struct {
-	Token string `json:"token"`
-	ChatId int64 `json:"chatId"`
-	Message string `json:"message"`
-	action actions.Action
+type TelegramBotAPI interface {
+	GetUpdatesChan(config tgbotapi.UpdateConfig) tgbotapi.UpdatesChannel
 }
 
-func (s *ReceiveTelegram) Listen() error {
+type ReceiveTelegram struct {
+	Token       string `json:"token"`
+	ChatId      int64  `json:"chatId"`
+	Message     string `json:"message"`
+	TestMessage string `json:"testMessage"`
+	bot         TelegramBotAPI
+}
+
+func (s *ReceiveTelegram) Init(ctx context.Context) error {
 	bot, err := tgbotapi.NewBotAPI(s.Token)
 
 	if err != nil {
@@ -25,36 +30,45 @@ func (s *ReceiveTelegram) Listen() error {
 	}
 
 	bot.Debug = false
-	u := tgbotapi.NewUpdate(0)
-	u.Timeout = 60
-
-	msg := tgbotapi.NewMessage(-746157642, "BOT TEST MESSAGE")
-	bot.Send(msg)
-
-	chatId := s.ChatId
-	updates := bot.GetUpdatesChan(u)
-	for update := range updates {
-		if update.Message != nil { // If we got a message
-			if(update.Message.Chat.ID != chatId) {
-				internal.LogDoc(s).Debugf("ReceiveTelegram received wrong ChatId. Got %d, wanted %d", update.Message.Chat.ID, s.ChatId)
-				continue	
-			}
-
-			if(update.Message.Text != s.Message) {
-				internal.LogDoc(s).Debug("ReceiveTelegram received wrong Message")
-				continue
-			}
-
-			internal.LogDoc(s).Info("ReceiveTelegram received secret message")
-			break
-		}
-	}
+	s.bot = bot
 
 	return nil
 }
 
-func (s *ReceiveTelegram) Fire() {
-	actions.Fire(s.action)
+func (s *ReceiveTelegram) Listen(ctx context.Context) (TriggerState, error) {
+	u := tgbotapi.NewUpdate(0)
+	u.Timeout = 60
+
+	chatId := s.ChatId
+	updates := s.bot.GetUpdatesChan(u)
+	for {
+		select {
+		case <-ctx.Done():
+			return Cancelled, &TriggerCancelledError{}
+		case update := <-updates:
+			{
+				if update.Message != nil { // If we got a message
+					if update.Message.Chat.ID != chatId {
+						internal.LogDoc(s).Debugf("ReceiveTelegram received wrong ChatId. Got %d, wanted %d",
+							update.Message.Chat.ID, s.ChatId)
+						continue
+					}
+
+					if update.Message.Text == s.Message {
+						internal.LogDoc(s).Info("ReceiveTelegram received secret message")
+						return Triggered, nil
+					}
+
+					if update.Message.Text == s.TestMessage {
+						internal.LogDoc(s).Info("ReceiveTelegram received test message")
+						return Test, nil
+					}
+
+					internal.LogDoc(s).Debug("ReceiveTelegram received wrong Message")
+				}
+			}
+		}
+	}
 }
 
 func CreateReceiveTelegram(config internal.KillSwitchConfig) (*ReceiveTelegram, error) {
@@ -80,13 +94,9 @@ func CreateReceiveTelegram(config internal.KillSwitchConfig) (*ReceiveTelegram, 
 		return &ReceiveTelegram{}, internal.OptionMissingError{"message"}
 	}
 
-	action, err := actions.NewAction(config.Actions)
-
-	if err != nil {
-		return &ReceiveTelegram{}, fmt.Errorf("Error during CreateReceiveTelegram: %s", err)
+	if result.TestMessage == "" {
+		return &ReceiveTelegram{}, internal.OptionMissingError{"testMessage"}
 	}
-
-	result.action = action
 
 	return result, nil
 }
@@ -119,22 +129,28 @@ func (p ReceiveTelegram) GetExample() string {
 func (p ReceiveTelegram) GetOptions() []internal.ConfigOption {
 	return []internal.ConfigOption{
 		{
-			Name: "token",
-			Type: "string",
+			Name:        "token",
+			Type:        "string",
 			Description: "telegram bot token (ask botfather)",
-			Default: "",
+			Default:     "",
 		},
 		{
-			Name: "chatId",
-			Type: "int",
+			Name:        "chatId",
+			Type:        "int",
 			Description: "chatId of group or chat you want the message be received from.",
-			Default: "",
+			Default:     "",
 		},
 		{
-			Name: "message",
-			Type: "string",
+			Name:        "message",
+			Type:        "string",
 			Description: "actual message that, when received, fires the trigger",
-			Default: "",
+			Default:     "",
+		},
+		{
+			Name:        "testMessage",
+			Type:        "string",
+			Description: "message that, when received, triggers test",
+			Default:     "",
 		},
 	}
 }
