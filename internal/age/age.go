@@ -29,7 +29,7 @@ func GenerateAgeKey(filename string) (*age.X25519Identity, error) {
 	privateKey := identity.String()
 
 	// Write the private key to a file
-	err = os.WriteFile(filename, []byte(privateKey), 0600)
+	err = os.WriteFile(filename, []byte(privateKey), 0400)
 	if err != nil {
 		return nil, fmt.Errorf("failed to save private key to file: %w", err)
 	}

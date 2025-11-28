@@ -33,45 +33,60 @@ import (
 )
 
 var (
-	Listen           = libp2p.ListenAddrStrings("/ip4/0.0.0.0/tcp/0")
-	Handler          *PeerHandler
-	MinGroupIdLength = 32
+	Listen                 = libp2p.ListenAddrStrings("/ip4/0.0.0.0/tcp/0")
+	Handler                *PeerHandler
+	MinGroupIdLength       = 32
+	KeyDirPath             = "/keys"
+	AgeKeyPath             = "/age.key"
+	Libp2pKeyPath          = "/libp2p.key"
+	GokillRemoteConfigPath = "/gokill_remote.json"
 )
 
-func SetupLibp2pHost(ctx context.Context, dbPath string) (host host.Host, dht *dht.IpfsDHT, err error) {
-	data := dbPath
-	keyPath := filepath.Join(data, "key")
+func SetupLibp2pHost(ctx context.Context, configDir string) (host host.Host, dht *dht.IpfsDHT, err error) {
+	keyPath := filepath.Join(configDir, KeyDirPath, Libp2pKeyPath)
+
 	var priv crypto.PrivKey
 	_, err = os.Stat(keyPath)
 	if os.IsNotExist(err) {
 		priv, _, err = crypto.GenerateKeyPair(crypto.Ed25519, 1)
 		if err != nil {
 			Log.Fatal(err.Error())
+			return nil, nil, err
 		}
 		data, err := crypto.MarshalPrivateKey(priv)
 		if err != nil {
 			Log.Fatal(err.Error())
+			return nil, nil, err
 		}
-		err = os.WriteFile(keyPath, data, 0400)
+
+		data_base64 := crypto.ConfigEncodeKey(data)
+		err = os.WriteFile(keyPath, []byte(data_base64), 0400)
 		if err != nil {
 			Log.Fatal(err.Error())
+			return nil, nil, err
 		}
 	} else if err != nil {
 		Log.Fatal(err.Error())
+		return nil, nil, err
 	} else {
-		key, err := os.ReadFile(keyPath)
+		key_base64, err := os.ReadFile(keyPath)
 		if err != nil {
 			Log.Fatal(err.Error())
+			return nil, nil, err
 		}
+
+		key, err := crypto.ConfigDecodeKey(string(key_base64))
 		priv, err = crypto.UnmarshalPrivateKey(key)
 		if err != nil {
 			Log.Fatal(err.Error())
+			return nil, nil, err
 		}
 
 	}
 
 	if err != nil {
 		Log.Fatal(err.Error())
+		return nil, nil, err
 	}
 
 	host, err = libp2p.New(libp2p.Identity(priv), Listen)
@@ -175,7 +190,14 @@ type PeerHandler struct {
 func CreatePeerHandler(ctx context.Context, cfgPath string) (PeerHandler, error) {
 	Log.Info("Start creation of gokill Peerhandler")
 	Log.Info("Looking for Keys...")
-	key, err := age.LoadOrGenerateKeys(cfgPath + "/age.key")
+
+	err := EnsureDirExists(cfgPath + KeyDirPath)
+	if err != nil {
+		Log.Error(err.Error())
+		return PeerHandler{}, err
+	}
+
+	key, err := age.LoadOrGenerateKeys(cfgPath + KeyDirPath + AgeKeyPath)
 
 	if err != nil {
 		return PeerHandler{}, fmt.Errorf("Peerhandler creation failed. Reason: %s", err)
@@ -205,7 +227,7 @@ func CreatePeerHandler(ctx context.Context, cfgPath string) (PeerHandler, error)
 		Key:    key,
 	}
 
-	configPath := cfgPath + "/config.json"
+	configPath := cfgPath + GokillRemoteConfigPath
 	Log.Infof("Loading config from: %s", configPath)
 	Cfg, err := peerHandler.LoadOrCreateConfig(configPath)
 

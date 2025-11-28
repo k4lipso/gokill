@@ -3,6 +3,7 @@ package internal
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 )
 
 type OptionMissingError struct {
@@ -39,4 +40,17 @@ type Documenter interface {
 	GetDescription() string
 	GetExample() string
 	GetOptions() []ConfigOption
+}
+
+func EnsureDirExists(dir string) error {
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		if err := os.Mkdir(dir, 0700); err != nil {
+			return fmt.Errorf("failed to create directory: %v", err)
+		}
+		Log.Infof("Directory created: %s", dir)
+	} else if err != nil {
+		return fmt.Errorf("error checking directory: %v", err)
+	}
+
+	return nil
 }
