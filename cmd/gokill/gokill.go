@@ -58,7 +58,7 @@ func Observe(c triggers.TriggerUpdateChan) {
 }
 
 var (
-	dbPath = flag.String("db", "./db", "db file path")
+	dbPath = flag.String("db", "/etc/gokill", "db file path")
 )
 
 func runRemoteHandler(ctx context.Context) {
