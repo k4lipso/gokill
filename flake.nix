@@ -17,6 +17,7 @@
       ];
     };
     currentVendorHash = "sha256-6OS491wgLYADzUoBChE249OUZcMVKpc/mcd6EZxi/Bc=";
+    fs = pkgs.lib.fileset;
   in
   {
 
@@ -38,12 +39,26 @@
         currentVendorHash = currentVendorHash; 
       };
 
-      gokill-docbuilder = pkgs.buildGoModule {
+      gokill-docbuilder =
+      let
+        sourceFiles = fs.difference
+        (fs.gitTracked ./.)
+        (fs.unions [
+          (fs.maybeMissing ./result)
+          (fs.fileFilter (file: file.hasExt "nix") ./.)
+          (fs.fileFilter (file: file.hasExt "md") ./.)
+          (fs.fileFilter (file: file.hasExt "json") ./.)
+        ]);
+      in
+      pkgs.buildGoModule {
         pname = "docbuilder";
         version = "1.0";
         vendorHash = currentVendorHash;
         buildFLags = "-o . $dest/cmd/gokill/docbuilder";
-        src = ./.;
+        src = fs.toSource {
+          root = ./.;
+          fileset = sourceFiles;
+        };
 
         buildInputs = [
           pkgs.olm
