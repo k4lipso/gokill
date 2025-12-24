@@ -66,11 +66,24 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    systemd.services.setup-gokill = {
+      description = "Initialize gokill directory";
+      wantedBy = [ "gokill.service" ];
+      unitConfig.ConditionPathExists = "!/etc/gokill/.is_initialized";
+      serviceConfig = {
+        Type = "oneshot";
+      };
+      script = ''
+        mkdir /etc/gokill
+        touch /etc/gokill/.is_initialized
+      '';
+    };
+
     systemd.services.gokill = {
       description = "gokill daemon";
       serviceConfig = {
         Type = "simple";
-        ExecStart = "${gokill-pkg}/bin/gokill --db ./ -c ${configFile} ${testRun}";
+        ExecStart = "${gokill-pkg}/bin/gokill --db /etc/gokill -r -c ${configFile} ${testRun}";
         Restart = "on-failure";
       };
 
