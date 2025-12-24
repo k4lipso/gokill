@@ -1,8 +1,8 @@
-flake: { config, lib, pkgs, self, ... }: 
+{ config, lib, pkgs, inputs, ... }: 
 let
   cfg = config.services.gokill;
   configFile = pkgs.writeText "config.json" (builtins.toJSON cfg.triggers); 
-  gokill-pkg = self.packages.x86_64-linux.gokill;
+  gokill-pkg = inputs.gokill.packages.aarch64-linux.gokill;
   testRun = if cfg.testRun then "-t" else "";
 in
 {

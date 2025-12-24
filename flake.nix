@@ -148,7 +148,7 @@
     };
 
   })) ({
-    nixosModules.gokill = import ./nixos-modules/gokill.nix { self = self; };
+    nixosModules.gokill = import ./nixos-modules/gokill.nix;
 
     packages.x86_64-linux.testVm = 
     let
