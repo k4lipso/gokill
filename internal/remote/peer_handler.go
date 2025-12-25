@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -33,18 +32,12 @@ import (
 )
 
 var (
-	Listen                 = libp2p.ListenAddrStrings("/ip4/0.0.0.0/tcp/0")
-	Handler                *PeerHandler
-	MinGroupIdLength       = 32
-	KeyDirPath             = "/keys"
-	AgeKeyPath             = "/age.key"
-	Libp2pKeyPath          = "/libp2p.key"
-	GokillRemoteConfigPath = "/gokill_remote.json"
+	Listen           = libp2p.ListenAddrStrings("/ip4/0.0.0.0/tcp/0")
+	Handler          *PeerHandler
+	MinGroupIdLength = 32
 )
 
-func SetupLibp2pHost(ctx context.Context, configDir string) (host host.Host, dht *dht.IpfsDHT, err error) {
-	keyPath := filepath.Join(configDir, KeyDirPath, Libp2pKeyPath)
-
+func SetupLibp2pHost(ctx context.Context, keyPath string) (host host.Host, dht *dht.IpfsDHT, err error) {
 	var priv crypto.PrivKey
 	_, err = os.Stat(keyPath)
 	if os.IsNotExist(err) {
@@ -187,17 +180,11 @@ type PeerHandler struct {
 	ConfigPath string
 }
 
-func CreatePeerHandler(ctx context.Context, cfgPath string) (PeerHandler, error) {
+func CreatePeerHandler(ctx context.Context, remoteConfigPath string, ageKeyPath string, libp2p2KeyPath string) (PeerHandler, error) {
 	Log.Info("Start creation of gokill Peerhandler")
 	Log.Info("Looking for Keys...")
 
-	err := EnsureDirExists(cfgPath + KeyDirPath)
-	if err != nil {
-		Log.Error(err.Error())
-		return PeerHandler{}, err
-	}
-
-	key, err := age.LoadOrGenerateKeys(cfgPath + KeyDirPath + AgeKeyPath)
+	key, err := age.LoadOrGenerateKeys(ageKeyPath)
 
 	if err != nil {
 		return PeerHandler{}, fmt.Errorf("Peerhandler creation failed. Reason: %s", err)
@@ -206,7 +193,7 @@ func CreatePeerHandler(ctx context.Context, cfgPath string) (PeerHandler, error)
 	Log.Infof("Found Key: %s", key.Recipient().String())
 	Log.Info("Setting up DHT...")
 
-	h, dht, err := SetupLibp2pHost(ctx, cfgPath)
+	h, dht, err := SetupLibp2pHost(ctx, libp2p2KeyPath)
 
 	if err != nil {
 		return PeerHandler{}, fmt.Errorf("Peerhandler creation failed. Reason: %s", err)
@@ -227,16 +214,15 @@ func CreatePeerHandler(ctx context.Context, cfgPath string) (PeerHandler, error)
 		Key:    key,
 	}
 
-	configPath := cfgPath + GokillRemoteConfigPath
-	Log.Infof("Loading config from: %s", configPath)
-	Cfg, err := peerHandler.LoadOrCreateConfig(configPath)
+	Log.Infof("Loading remote config from: %s", remoteConfigPath)
+	Cfg, err := peerHandler.LoadOrCreateConfig(remoteConfigPath)
 
 	if err != nil {
 		return PeerHandler{}, fmt.Errorf("Peerhandler creation failed. Reason: %s", err)
 	}
 
 	peerHandler.Config = Cfg
-	peerHandler.ConfigPath = configPath
+	peerHandler.ConfigPath = remoteConfigPath
 
 	Log.Infof("Setting up PeerGroups...")
 	peerHandler.InitPeerGroups()

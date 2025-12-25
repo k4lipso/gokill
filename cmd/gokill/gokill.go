@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/k4lipso/gokill/actions"
@@ -58,11 +59,35 @@ func Observe(c triggers.TriggerUpdateChan) {
 }
 
 var (
-	dbPath = flag.String("db", "/etc/gokill", "db file path")
+	cfgBaseDir             = flag.String("db", "/etc/gokill", "path to gokill config basedir")
+	KeyDirPath             = "/keys"
+	AgeKeyPath             = "/age.key"
+	Libp2pKeyPath          = "/libp2p.key"
+	GokillRemoteConfigPath = "/gokill_remote.json"
 )
 
-func runRemoteHandler(ctx context.Context) {
-	peerHandler, err := remote.CreatePeerHandler(ctx, *dbPath)
+func runRemoteHandler(ctx context.Context, remoteConfigPath string, ageKeyPath string, libp2pPath string) {
+	if ageKeyPath == "" || libp2pPath == "" {
+		err := internal.EnsureDirExists(*cfgBaseDir + KeyDirPath)
+		if err != nil {
+			internal.Log.Error(err.Error())
+			return
+		}
+
+		if ageKeyPath == "" {
+			ageKeyPath = filepath.Join(*cfgBaseDir, KeyDirPath, AgeKeyPath)
+		}
+
+		if libp2pPath == "" {
+			libp2pPath = filepath.Join(*cfgBaseDir, KeyDirPath, Libp2pKeyPath)
+		}
+	}
+
+	if remoteConfigPath == "" {
+		remoteConfigPath = filepath.Join(*cfgBaseDir, GokillRemoteConfigPath)
+	}
+
+	peerHandler, err := remote.CreatePeerHandler(ctx, remoteConfigPath, ageKeyPath, libp2pPath)
 
 	if err != nil {
 		internal.Log.Errorf("%s", err)
@@ -75,6 +100,9 @@ func runRemoteHandler(ctx context.Context) {
 
 func main() {
 	configFilePath := flag.String("c", "", "path to config file")
+	ageKeyPath := flag.String("key-age", "", "optional path to age key")
+	libp2pPath := flag.String("key-p2p", "", "optional path to libp2p key")
+	remoteConfigPath := flag.String("remote-config", "", "optional path to remote config")
 	showDoc := flag.Bool("d", false, "show doc")
 	testRun := flag.Bool("t", false, "test run")
 	runRemote := flag.Bool("r", false, "enable remote triggers and actions")
@@ -114,7 +142,7 @@ func main() {
 
 	ctxRemote, _ := context.WithCancel(ctx)
 	if *runRemote {
-		go runRemoteHandler(ctxRemote)
+		go runRemoteHandler(ctxRemote, *remoteConfigPath, *ageKeyPath, *libp2pPath)
 		time.Sleep(time.Second * 5)
 	}
 
@@ -141,6 +169,6 @@ func main() {
 		})
 	}
 
-	rpc.Serve(*dbPath)
+	rpc.Serve(*cfgBaseDir)
 	select {}
 }
