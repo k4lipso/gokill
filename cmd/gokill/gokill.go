@@ -151,12 +151,13 @@ func main() {
 
 	for _, cfg := range f {
 		trigger, err := triggers.NewTrigger(cfg)
-		trigger.TestRun = *testRun
 
 		if err != nil {
 			internal.Log.Errorf("%s", err)
 			return
 		}
+
+		trigger.TestRun = *testRun
 
 		internal.Log.Infof("Registered trigger with name: %s", trigger.Name)
 		trigger.Attach(triggerUpdateChan)
