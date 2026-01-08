@@ -5,8 +5,7 @@ let
   remoteConfigFile = pkgs.writeText "remote-config.json" (builtins.toJSON cfg.remote.config); 
   gokill-pkg = inputs.self.packages.x86_64-linux.gokill;
   testRun = if cfg.testRun then "-t" else "";
-  #remoteCfg = if cfg.remote.config != {} then "-remote-config ${remoteConfigFile}" else "";
-  remoteCfg = "";
+  remoteCfg = if cfg.remote.config.groups != [] then "-remote-config ${remoteConfigFile}" else "";
   remote = if cfg.remote.enable then "-r" else "";
   keyAge = if cfg.remote.ageKeyFile != "" then "-key-age ${cfg.remote.ageKeyFile}" else "";
   keyP2p = if cfg.remote.p2pKeyFile != "" then "-key-p2p ${cfg.remote.p2pKeyFile}" else "";
@@ -54,51 +53,43 @@ in
             Path to gokill p2p key
             '';
         };
-
-        #remoteConfigFile = mkOption {
-        #  type = types.str;
-        #  default = "";
-        #  description = mdDoc ''
-        #    Path to gokill remote config
-        #    '';
-        #};
       };
 
-      #remote.config = {
-      #  id = mkOption {
-      #    type = types.str;
-      #  };
-      #  key = mkOption {
-      #    type = types.str;
-      #  };
-      #  groups = mkOption {
-      #    description = "gokill remote config";
-      #    default = {};
-      #    type = with types; types.listOf ( submodule {
-      #      options = {
-      #        Name = mkOption {
-      #          type = types.str;
-      #        };
-      #        Id = mkOption {
-      #          type = types.str;
-      #        };
-      #        Peers = mkOption {
-      #          description = "list of peers";
-      #          type = with types; types.listOf ( submodule {
-      #            options = {
-      #              id = mkOption {
-      #                type = types.str;
-      #              };
-      #              key = mkOption {
-      #                type = types.str;
-      #              };
-      #            };
-      #          });
-      #        };
-      #      };
-      #    });
-      #  };
-      #};
+      remote.config = {
+        id = mkOption {
+          type = types.str;
+        };
+        key = mkOption {
+          type = types.str;
+        };
+        groups = mkOption {
+          description = "gokill remote config";
+          default = [];
+          type = with types; types.listOf ( submodule {
+            options = {
+              Name = mkOption {
+                type = types.str;
+              };
+              Id = mkOption {
+                type = types.str;
+              };
+              Peers = mkOption {
+                description = "list of peers";
+                type = with types; types.listOf ( submodule {
+                  options = {
+                    id = mkOption {
+                      type = types.str;
+                    };
+                    key = mkOption {
+                      type = types.str;
+                    };
+                  };
+                });
+              };
+            };
+          });
+        };
+      };
 
       triggers = mkOption {
         description = "list of triggers";
