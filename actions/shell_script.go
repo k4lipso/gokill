@@ -3,14 +3,16 @@ package actions
 import (
 	"encoding/json"
 	"fmt"
-	"os/exec"
 	"os"
+	"os/exec"
+	"strings"
 
 	"github.com/k4lipso/gokill/internal"
 )
 
 type ShellScript struct {
 	Path string `json:"path"`
+	Args string `json:"args"`
 	ActionType
 }
 
@@ -23,7 +25,7 @@ func isExecutableFile(path string) bool {
 
 	mode := fi.Mode()
 
-	//TODO: should check if current user can execute 
+	//TODO: should check if current user can execute
 	if mode&01111 == 0 {
 		return false
 	}
