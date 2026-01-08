@@ -270,14 +270,20 @@ func (s *PeerHandler) GetSelfPeer() Peer {
 	}
 }
 
-func (s *PeerHandler) UpdateConfig() {
+func (s *PeerHandler) UpdateConfig() error {
 	Log.Debug("Updating Config...")
 	s.recreateConfig()
-	s.writeConfig(s.ConfigPath, RemoteConfig{
+	err := s.writeConfig(s.ConfigPath, RemoteConfig{
 		Id:     s.Host.ID().String(),
 		Key:    s.Key.Recipient().String(),
 		Groups: s.Config,
 	})
+
+	if err != nil {
+		Log.Errorf("Error while updating remote config %s: %s", s.ConfigPath, err)
+	}
+
+	return err
 }
 
 func (s *PeerHandler) recreateConfig() {
@@ -441,8 +447,7 @@ func (s *PeerHandler) AddPeerGroup(Name string) (*PeerGroup, error) {
 
 	result.TrustedPeers = append(result.TrustedPeers, s.GetSelfPeer())
 	s.PeerGroups[Name] = result
-	s.UpdateConfig()
-	return result, nil
+	return result, s.UpdateConfig()
 }
 
 func (n *PeerHandler) Broadcast(peerGroupName string, msg string) error {
