@@ -144,7 +144,7 @@ in
   config = lib.mkIf cfg.enable {
     systemd.services.setup-gokill = {
       description = "Initialize gokill directory";
-      wantedBy = [ "gokill.service" ];
+      wantedBy = [ "gokill.service" "clean-gokill.service" ];
       unitConfig.ConditionPathExists = "!/etc/gokill/.is_initialized";
       serviceConfig = {
         Type = "oneshot";
@@ -155,11 +155,22 @@ in
       '';
     };
 
+    systemd.services.clean-gokill = {
+      description = "Cleanup gokill socket";
+      wantedBy = [ "gokill.service" ];
+      serviceConfig = {
+        Type = "oneshot";
+      };
+      script = ''
+        rm /etc/gokill/gokill.socket
+      '';
+    };
+
     systemd.services.gokill = {
       description = "gokill daemon";
       serviceConfig = {
         Type = "simple";
-        ExecStart = "${gokill-pkg}/bin/gokill --db /etc/gokill ${remote} ${keyAge} ${keyP2p} ${remoteCfg} -c ${configFile} ${testRun}";
+        ExecStart = "${gokill-pkg}/bin/gokill --db /etc/gokill --verbose ${remote} ${keyAge} ${keyP2p} ${remoteCfg} -c ${configFile} ${testRun}";
         Restart = "on-failure";
       };
 
