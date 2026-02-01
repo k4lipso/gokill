@@ -1,9 +1,12 @@
-{ config, lib, pkgs, inputs, ... }: 
+{ config, lib, pkgs, ... }: 
 let
+  gokill-pkg = import ../pkgs/gokill-command.nix {
+    inherit pkgs;
+  };
+
   cfg = config.services.gokill;
   configFile = pkgs.writeText "config.json" (builtins.toJSON cfg.triggers); 
   remoteConfigFile = pkgs.writeText "remote-config.json" (builtins.toJSON cfg.remote.config); 
-  gokill-pkg = inputs.self.packages.x86_64-linux.gokill;
   testRun = if cfg.testRun then "-t" else "";
   remoteCfg = if cfg.remote.config.groups != [] then "-remote-config ${remoteConfigFile}" else "";
   remote = if cfg.remote.enable then "-r" else "";
