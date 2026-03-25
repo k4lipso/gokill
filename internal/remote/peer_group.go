@@ -13,26 +13,14 @@ import (
 	age "github.com/k4lipso/gokill/internal/age"
 )
 
-type TriggerMessage int
-
-const (
-	TriggerMessageTest TriggerMessage = iota
-	TriggerMessageTrigger
-)
-
-type TriggerChannel struct {
-	IsTest  bool
-	Channel chan TriggerMessage
-}
-
 type PeerGroup struct {
-	ID              string
-	topic           *pubsub.Topic
-	CancelFunc      context.CancelFunc
-	ctx             context.Context
-	Key             *agelib.X25519Identity
-	TrustedPeers    []Peer
-	TriggerChannels map[string]TriggerChannel
+	ExternalTriggerMap
+	ID           string
+	topic        *pubsub.Topic
+	CancelFunc   context.CancelFunc
+	ctx          context.Context
+	Key          *agelib.X25519Identity
+	TrustedPeers []Peer
 }
 
 func (n *PeerGroup) GetPeerById(id string) (Peer, error) {
@@ -110,22 +98,6 @@ func (n *PeerGroup) Close() {
 	n.CancelFunc()
 }
 
-func (n *PeerGroup) RegisterRemoteTrigger(secret string, testSecret string) (chan TriggerMessage, error) {
-	channel := make(chan TriggerMessage)
-
-	n.TriggerChannels[secret] = TriggerChannel{
-		IsTest:  false,
-		Channel: channel,
-	}
-
-	n.TriggerChannels[testSecret] = TriggerChannel{
-		IsTest:  true,
-		Channel: channel,
-	}
-
-	return channel, nil
-}
-
 func handleMessages(ctx context.Context, sub *pubsub.Subscription, peerGroup *PeerGroup) {
 	for {
 		m, err := sub.Next(ctx)
@@ -147,16 +119,10 @@ func handleMessages(ctx context.Context, sub *pubsub.Subscription, peerGroup *Pe
 
 		fmt.Println(m.ReceivedFrom, ": ", string(msg))
 
-		val, ok := peerGroup.TriggerChannels[string(msg)]
+		err = peerGroup.ExecuteRemoteTrigger(string(msg))
 
-		if !ok {
-			continue
-		}
-
-		if val.IsTest {
-			val.Channel <- TriggerMessageTest
-		} else {
-			val.Channel <- TriggerMessageTrigger
+		if err != nil {
+			Log.Errorf("%s", err)
 		}
 	}
 }
@@ -205,12 +171,14 @@ func CreatePeerGroup(ID string, peerHandler *PeerHandler) (*PeerGroup, error) {
 	}
 
 	peerGroup := PeerGroup{
-		ID:              ID,
-		topic:           topic,
-		ctx:             ctx,
-		Key:             peerHandler.Key,
-		TrustedPeers:    val,
-		TriggerChannels: make(map[string]TriggerChannel),
+		ExternalTriggerMap: ExternalTriggerMap{
+			TriggerChannels: make(map[string]TriggerChannel),
+		},
+		ID:           ID,
+		topic:        topic,
+		ctx:          ctx,
+		Key:          peerHandler.Key,
+		TrustedPeers: val,
 	}
 
 	go handleMessages(ctx, sub, &peerGroup)

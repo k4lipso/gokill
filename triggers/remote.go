@@ -32,7 +32,7 @@ func (t *Remote) Listen(ctx context.Context) (TriggerState, error) {
 
 	select {
 	case msg := <-channel:
-		if msg == remote.TriggerMessageTrigger {
+		if msg == internal.TriggerMessageTrigger {
 			return Triggered, nil
 		} else {
 			return Test, nil
