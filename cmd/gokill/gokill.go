@@ -12,6 +12,7 @@ import (
 	"github.com/k4lipso/gokill/actions"
 	"github.com/k4lipso/gokill/internal"
 	"github.com/k4lipso/gokill/internal/remote"
+	"github.com/k4lipso/gokill/internal/sip"
 	"github.com/k4lipso/gokill/rpc"
 	"github.com/k4lipso/gokill/triggers"
 )
@@ -98,11 +99,24 @@ func runRemoteHandler(ctx context.Context, remoteConfigPath string, ageKeyPath s
 	peerHandler.RunBackground(ctx)
 }
 
+func runSipHandler(ctx context.Context, sipConfigPath string) {
+	sipHandler, err := sip.CreateSipHandler(ctx, sipConfigPath)
+
+	if err != nil {
+		internal.Log.Errorf("Error during creation of sip handler: %s", err)
+		return
+	}
+
+	sip.Handler = &sipHandler
+	sipHandler.Run(ctx)
+}
+
 func main() {
 	configFilePath := flag.String("c", "", "path to config file")
 	ageKeyPath := flag.String("key-age", "", "optional path to age key")
 	libp2pPath := flag.String("key-p2p", "", "optional path to libp2p key")
 	remoteConfigPath := flag.String("remote-config", "", "optional path to remote config")
+	sipConfigPath := flag.String("sip-config", "", "optional path to sip config")
 	showDoc := flag.Bool("d", false, "show doc")
 	testRun := flag.Bool("t", false, "test run")
 	runRemote := flag.Bool("r", false, "enable remote triggers and actions")
@@ -143,6 +157,11 @@ func main() {
 	ctxRemote, _ := context.WithCancel(ctx)
 	if *runRemote {
 		go runRemoteHandler(ctxRemote, *remoteConfigPath, *ageKeyPath, *libp2pPath)
+		time.Sleep(time.Second * 5)
+	}
+
+	if *sipConfigPath != "" {
+		go runSipHandler(ctxRemote, *sipConfigPath)
 		time.Sleep(time.Second * 5)
 	}
 

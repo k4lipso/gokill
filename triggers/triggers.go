@@ -267,6 +267,7 @@ func GetAllTriggers() []Trigger {
 		&TimeOut{},
 		&UsbDisconnect{},
 		&Remote{},
+		&Sip{},
 	}
 }
 
