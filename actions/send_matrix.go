@@ -55,7 +55,7 @@ func (s SendMatrix) sendMessage(message string) error {
 		}
 	}
 
-	err = cryptoHelper.Init()
+	err = cryptoHelper.Init(context.Background())
 	if err != nil {
 		return err
 	}
@@ -76,7 +76,7 @@ func (s SendMatrix) sendMessage(message string) error {
 	}()
 
 	time.Sleep(5 * time.Second)
-	resp, err := client.SendText(id.RoomID(s.RoomId), message)
+	resp, err := client.SendText(syncCtx, id.RoomID(s.RoomId), message)
 
 	if err != nil {
 		return fmt.Errorf("Failed to send event")
