@@ -544,48 +544,55 @@ func (s *PeerHandler) RunBackground(ctx context.Context) {
 func (s *PeerHandler) discoverPeers(ctx context.Context) error {
 	time.Sleep(2 * time.Second)
 
+	var wg sync.WaitGroup
 	for peerGroupName, v := range s.PeerGroups {
-		Log.Debugf("Announcing PeerGroup \"%s\" with id: %s", peerGroupName, v.ID)
-		routingDiscovery := discovery.NewRoutingDiscovery(s.Dht)
-		routingDiscovery.Advertise(ctx, v.ID)
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			Log.Debugf("Announcing PeerGroup \"%s\" with id: %s", peerGroupName, v.ID)
+			routingDiscovery := discovery.NewRoutingDiscovery(s.Dht)
+			routingDiscovery.Advertise(ctx, v.ID)
 
-		Log.Debugf("Start peer discovery...")
+			Log.Debugf("Start peer discovery...")
 
-		timedCtx, cf := context.WithTimeout(ctx, time.Second*120)
-		defer cf()
+			timedCtx, cf := context.WithTimeout(ctx, time.Second*120)
+			defer cf()
 
-		peerChan, err := routingDiscovery.FindPeers(timedCtx, v.ID)
-		if err != nil {
-			return err
-		}
-
-		for peer := range peerChan {
-			if peer.ID == s.Host.ID() || len(peer.Addrs) == 0 {
-				continue // No self connection
-			}
-
-			if !s.IsTrustedPeer(timedCtx, peer.ID, v.ID) {
-				continue // Only conntect to trusted peers
-			}
-
-			Log.Debugf("Found peer with id %s", peer.ID.String())
-			v.SetPeerConnectionState(peer.ID.String(), s.Host.Network().Connectedness(peer.ID))
-
-			if s.Host.Network().Connectedness(peer.ID) == network.Connected {
-				Log.Debugf("Already connected to %s", peer.ID.String())
-				continue
-			}
-
-			timeoutCtx, cancel := context.WithTimeout(ctx, time.Second*120)
-			defer cancel()
-			err := s.Host.Connect(timeoutCtx, peer)
+			peerChan, err := routingDiscovery.FindPeers(timedCtx, v.ID)
 			if err != nil {
-				Log.Debugf("Failed connecting to %s, error: %s\n", peer.ID, err)
-			} else {
-				Log.Debugf("Connected to: %s", peer.ID)
+				Log.Errorf("Error during discover peers: %s", err)
+				return
 			}
-		}
+			for peer := range peerChan {
+				if peer.ID == s.Host.ID() || len(peer.Addrs) == 0 {
+					continue // No self connection
+				}
+
+				if !s.IsTrustedPeer(timedCtx, peer.ID, v.ID) {
+					continue // Only conntect to trusted peers
+				}
+
+				Log.Debugf("Found peer with id %s", peer.ID.String())
+				v.SetPeerConnectionState(peer.ID.String(), s.Host.Network().Connectedness(peer.ID))
+
+				if s.Host.Network().Connectedness(peer.ID) == network.Connected {
+					Log.Debugf("Already connected to %s", peer.ID.String())
+					continue
+				}
+
+				timeoutCtx, cancel := context.WithTimeout(ctx, time.Second*120)
+				defer cancel()
+				err := s.Host.Connect(timeoutCtx, peer)
+				if err != nil {
+					Log.Debugf("Failed connecting to %s, error: %s\n", peer.ID, err)
+				} else {
+					Log.Debugf("Connected to: %s", peer.ID)
+				}
+			}
+		}()
 	}
+
+	wg.Wait()
 
 	Log.Debug("Peer discovery complete")
 	return nil
