@@ -46,7 +46,7 @@ func (s SendMatrix) sendMessage(message string) error {
 
 	if len(s.Token) != 0 {
 		client.UserID = id.UserID(s.Username)
-		client.AccessToken = s.Password
+		client.AccessToken = s.Token
 	} else {
 		cryptoHelper.LoginAs = &mautrix.ReqLogin{
 			Type:       mautrix.AuthTypePassword,
