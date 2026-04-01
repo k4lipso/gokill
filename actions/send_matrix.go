@@ -134,7 +134,7 @@ func CreateSendMatrix(config internal.ActionConfig, c ActionResultChan) (SendMat
 		return SendMatrix{}, internal.OptionMissingError{"username"}
 	}
 
-	if result.Password == "" || result.Token == "" {
+	if result.Password == "" && result.Token == "" {
 		return SendMatrix{}, internal.OptionMissingError{"password or token"}
 	}
 
