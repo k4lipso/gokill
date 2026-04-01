@@ -107,6 +107,11 @@ in
               type = types.str;
             };
 
+            loop = mkOption {
+              type = types.bool;
+              default = false;
+            };
+
             options = mkOption {
               type = types.attrs;
             };
