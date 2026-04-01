@@ -39,7 +39,7 @@ func init() {
 		}
 	})
 
-	RootCmd.PersistentFlags().StringVar(&dbPath, "db", "./db", "db path")
+	RootCmd.PersistentFlags().StringVar(&dbPath, "db", "/etc/gokill", "db path")
 	RootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "enable debug mode")
 	statusCmd.Flags().BoolVar(&showStages, "stages", false, "Show configured Stages")
 	remoteStatusCmd.Flags().BoolVar(&showPeers, "peers", false, "Show peering status")

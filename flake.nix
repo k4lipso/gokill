@@ -1,7 +1,6 @@
 {
   description = "A very basic flake";
 
-  #nixpkgs for testing framework
   inputs.nixpkgs.url = "github:nixos/nixpkgs/nixos-25.05";
   inputs.utils.url = "github:numtide/flake-utils";
 
@@ -17,6 +16,7 @@
       ];
     };
     currentVendorHash = "sha256-6OS491wgLYADzUoBChE249OUZcMVKpc/mcd6EZxi/Bc=";
+    fs = pkgs.lib.fileset;
   in
   {
 
@@ -33,27 +33,15 @@
     };
 
     packages = {
-      gokill = import ./default.nix { 
+      gokill = pkgs.callPackage (import ./pkgs/gokill-command.nix) { 
+        inherit self;
         pkgs = pkgs; 
-        currentVendorHash = currentVendorHash; 
       };
 
-      gokill-docbuilder = pkgs.buildGoModule {
-        pname = "docbuilder";
-        version = "1.0";
-        vendorHash = currentVendorHash;
-        buildFLags = "-o . $dest/cmd/gokill/docbuilder";
-        src = ./.;
-
-        buildInputs = [
-          pkgs.olm
-        ];
-
-        postInstall = ''
-          '';
+      docs = pkgs.callPackage (import ./docs/default.nix) {
+        inherit self;
+        pkgs = pkgs;
       };
-
-      docs = pkgs.callPackage (import ./docs/default.nix) { self = self; };
 
       default = self.packages.${system}.gokill;
     };
@@ -73,7 +61,6 @@
           Architecture: amd64
           Maintainer: kalipso@c3d2.de
           Description: A program that does stuff
-           You can add a longer description here. Mind the space at the beginning of this paragraph.
         '';
       in ''
         export HOME=$PWD
@@ -133,7 +120,7 @@
     };
 
   })) ({
-    nixosModules.gokill = import ./nixos-modules/gokill.nix { self = self; };
+    nixosModules.gokill = import ./nixos-modules/gokill.nix;
 
     packages.x86_64-linux.testVm = 
     let

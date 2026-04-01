@@ -3,14 +3,16 @@ package actions
 import (
 	"encoding/json"
 	"fmt"
-	"os/exec"
 	"os"
+	"os/exec"
+	"strings"
 
 	"github.com/k4lipso/gokill/internal"
 )
 
 type ShellScript struct {
 	Path string `json:"path"`
+	Args string `json:"args"`
 	ActionType
 }
 
@@ -23,7 +25,7 @@ func isExecutableFile(path string) bool {
 
 	mode := fi.Mode()
 
-	//TODO: should check if current user can execute 
+	//TODO: should check if current user can execute
 	if mode&01111 == 0 {
 		return false
 	}
@@ -58,7 +60,8 @@ func (c ShellScript) Execute() {
 		return
 	}
 
-	cmd := exec.Command("/bin/sh", c.Path)
+	args := strings.Fields(c.Args)
+	cmd := exec.Command("/bin/sh", append([]string{c.Path}, args...)...)
 
 	stdout, err := cmd.Output()
 
@@ -106,6 +109,7 @@ func (p ShellScript) GetExample() string {
 		"type": "ShellScript",
 		"options": {
 			"path": "/path/to/file.sh"
+			"args": "hello world"
 		}
 	}
 	`
@@ -114,5 +118,6 @@ func (p ShellScript) GetExample() string {
 func (p ShellScript) GetOptions() []internal.ConfigOption {
 	return []internal.ConfigOption{
 		{"path", "string", "path to script to execute", ""},
+		{"args", "string", "arguments passed to the script", ""},
 	}
 }

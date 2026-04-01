@@ -1,8 +1,10 @@
-{ pkgs, lib, self, ... }:
+{ pkgs, lib, ... }:
 
 with lib;
 let
-  docbuilder = self.packages.x86_64-linux.gokill-docbuilder;
+  docbuilder = import ../pkgs/docbuilder-command.nix { 
+    pkgs = pkgs; 
+  };
 
   prepareMD = ''
     # Copy inputs into the build directory
