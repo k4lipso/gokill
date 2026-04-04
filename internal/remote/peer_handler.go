@@ -460,7 +460,7 @@ func (n *PeerHandler) Broadcast(peerGroupName string, msg string) error {
 	return peerGroup.Broadcast(msg)
 }
 
-func (n *PeerHandler) RegisterRemoteTrigger(peerGroupName string, secret string, testSecret string) (chan TriggerMessage, error) {
+func (n *PeerHandler) RegisterRemoteTrigger(peerGroupName string, secret string, testSecret string) (chan TriggerChannelEvent, error) {
 	peerGroup, ok := n.PeerGroups[peerGroupName]
 
 	if !ok {

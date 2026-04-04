@@ -2,6 +2,7 @@ package remote
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	agelib "filippo.io/age"
@@ -119,7 +120,14 @@ func handleMessages(ctx context.Context, sub *pubsub.Subscription, peerGroup *Pe
 
 		fmt.Println(m.ReceivedFrom, ": ", string(msg))
 
-		err = peerGroup.ExecuteRemoteTrigger(string(msg))
+		var event TriggerEvent
+		err = json.Unmarshal(msg, &event)
+
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		err = peerGroup.ExecuteRemoteTrigger(event)
 
 		if err != nil {
 			Log.Errorf("%s", err)
