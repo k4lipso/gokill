@@ -12,7 +12,7 @@ type ExternalTriggerMapTest struct {
 	receivedSecret        string
 	expectedRegisterError error
 	expectedError         error
-	expectedTrigger       TriggerMessage
+	expectedTest          bool
 }
 
 func TestExternalTriggerMap(t *testing.T) {
@@ -23,7 +23,7 @@ func TestExternalTriggerMap(t *testing.T) {
 			receivedSecret:        "foo",
 			expectedRegisterError: nil,
 			expectedError:         nil,
-			expectedTrigger:       TriggerMessageTrigger,
+			expectedTest:          false,
 		},
 		{
 			secret:                "foo",
@@ -31,7 +31,7 @@ func TestExternalTriggerMap(t *testing.T) {
 			receivedSecret:        "bar",
 			expectedRegisterError: nil,
 			expectedError:         nil,
-			expectedTrigger:       TriggerMessageTest,
+			expectedTest:          true,
 		},
 		{
 			secret:                "foo",
@@ -46,7 +46,7 @@ func TestExternalTriggerMap(t *testing.T) {
 			receivedSecret:        "1234",
 			expectedRegisterError: nil,
 			expectedError:         nil,
-			expectedTrigger:       TriggerMessageTrigger,
+			expectedTest:          false,
 		},
 		{
 			secret:                "",
@@ -54,7 +54,7 @@ func TestExternalTriggerMap(t *testing.T) {
 			receivedSecret:        "",
 			expectedRegisterError: fmt.Errorf("Some Error"),
 			expectedError:         nil,
-			expectedTrigger:       TriggerMessageTrigger,
+			expectedTest:          false,
 		},
 	}
 
@@ -85,7 +85,7 @@ func TestExternalTriggerMap(t *testing.T) {
 			}
 
 			go func() {
-				err = externalTriggerMap.ExecuteRemoteTrigger(testCase.receivedSecret)
+				err = externalTriggerMap.ExecuteRemoteTrigger(TriggerEvent{Secret: testCase.receivedSecret})
 
 				if (err == nil) != (testCase.expectedError == nil) {
 					t.Errorf("Expected Error: %s, got: %s", testCase.expectedError, err)
@@ -98,8 +98,8 @@ func TestExternalTriggerMap(t *testing.T) {
 
 			receivedTrigger := <-channel
 
-			if receivedTrigger != testCase.expectedTrigger {
-				t.Errorf("Expected Trigger: %d, got: %d", testCase.expectedTrigger, receivedTrigger)
+			if receivedTrigger.IsTest != testCase.expectedTest {
+				t.Errorf("Expected Trigger: %t, got: %t", testCase.expectedTest, receivedTrigger.IsTest)
 				continue
 			}
 		}
