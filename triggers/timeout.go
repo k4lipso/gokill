@@ -16,16 +16,16 @@ func (t *TimeOut) Init(ctx context.Context) error {
 	return nil
 }
 
-func (t *TimeOut) Listen(ctx context.Context) (TriggerState, error) {
+func (t *TimeOut) Listen(ctx context.Context) (TriggerState, *internal.Payload, error) {
 	internal.LogDoc(t).Info("TimeOut listens")
 	internal.LogDoc(t).Infof("%d", t.Duration)
 
 	select {
 	case <-time.After(time.Duration(t.Duration) * time.Second):
 		internal.LogDoc(t).Notice("TimeOut fires")
-		return Triggered, nil
+		return Triggered, nil, nil
 	case <-ctx.Done():
-		return Cancelled, nil
+		return Cancelled, nil, nil
 	}
 }
 

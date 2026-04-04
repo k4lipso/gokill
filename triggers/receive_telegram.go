@@ -35,7 +35,7 @@ func (s *ReceiveTelegram) Init(ctx context.Context) error {
 	return nil
 }
 
-func (s *ReceiveTelegram) Listen(ctx context.Context) (TriggerState, error) {
+func (s *ReceiveTelegram) Listen(ctx context.Context) (TriggerState, *internal.Payload, error) {
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
 
@@ -44,7 +44,7 @@ func (s *ReceiveTelegram) Listen(ctx context.Context) (TriggerState, error) {
 	for {
 		select {
 		case <-ctx.Done():
-			return Cancelled, &TriggerCancelledError{}
+			return Cancelled, nil, &TriggerCancelledError{}
 		case update := <-updates:
 			{
 				if update.Message != nil { // If we got a message
@@ -56,12 +56,12 @@ func (s *ReceiveTelegram) Listen(ctx context.Context) (TriggerState, error) {
 
 					if update.Message.Text == s.Message {
 						internal.LogDoc(s).Info("ReceiveTelegram received secret message")
-						return Triggered, nil
+						return Triggered, nil, nil
 					}
 
 					if update.Message.Text == s.TestMessage {
 						internal.LogDoc(s).Info("ReceiveTelegram received test message")
-						return Test, nil
+						return Test, nil, nil
 					}
 
 					internal.LogDoc(s).Debug("ReceiveTelegram received wrong Message")

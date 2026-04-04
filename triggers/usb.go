@@ -45,15 +45,15 @@ func (t *UsbDisconnect) Init(ctx context.Context) error {
 	}
 }
 
-func (t *UsbDisconnect) Listen(ctx context.Context) (TriggerState, error) {
+func (t *UsbDisconnect) Listen(ctx context.Context) (TriggerState, *internal.Payload, error) {
 	for {
 		select {
 		case <-time.After(1 * time.Second):
 			if !isUsbConnected(t.DeviceName) {
-				return Triggered, nil
+				return Triggered, nil, nil
 			}
 		case <-ctx.Done():
-			return Cancelled, &TriggerCancelledError{}
+			return Cancelled, nil, &TriggerCancelledError{}
 		}
 	}
 }

@@ -18,26 +18,26 @@ func (t *Sip) Init(ctx context.Context) error {
 	return nil
 }
 
-func (t *Sip) Listen(ctx context.Context) (TriggerState, error) {
+func (t *Sip) Listen(ctx context.Context) (TriggerState, *internal.Payload, error) {
 	if sip.Handler == nil {
-		return Failed, fmt.Errorf("Sip Trigger failed to listen, Sip handler is not initialized")
+		return Failed, nil, fmt.Errorf("Sip Trigger failed to listen, Sip handler is not initialized")
 	}
 
 	channel, err := sip.Handler.RegisterRemoteTrigger(t.Secret, t.TestSecret)
 
 	if err != nil {
-		return Failed, fmt.Errorf("Could not register Sip trigger")
+		return Failed, nil, fmt.Errorf("Could not register Sip trigger")
 	}
 
 	select {
-	case msg := <-channel:
-		if msg == internal.TriggerMessageTrigger {
-			return Triggered, nil
+	case event := <-channel:
+		if event.IsTest {
+			return Triggered, nil, nil
 		} else {
-			return Test, nil
+			return Test, nil, nil
 		}
 	case <-ctx.Done():
-		return Cancelled, &TriggerCancelledError{}
+		return Cancelled, nil, &TriggerCancelledError{}
 	}
 }
 

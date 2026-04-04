@@ -59,7 +59,7 @@ func TestListenTriggerCancellation(t *testing.T) {
 	for _, test := range testListenTriggers {
 		cancelCtx, cancel := context.WithCancel(ctx)
 		cancel()
-		state, err := test.trigger.Listen(cancelCtx)
+		state, _, err := test.trigger.Listen(cancelCtx)
 
 		if err != test.expectedError {
 			t.Errorf("Incorrect Error returned. Got: %s, wanted: %s", err, test.expectedError)

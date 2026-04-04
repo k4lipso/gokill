@@ -28,8 +28,9 @@ const (
 )
 
 type TriggerEvent struct {
-	State TriggerState
-	Error error
+	State   TriggerState
+	Payload *internal.Payload
+	Error   error
 }
 
 func (e TriggerState) String() string {
@@ -121,7 +122,7 @@ type Trigger interface {
 	//TODO: rm internal.Documenter, make DocumentedTrigger
 	internal.Documenter
 	Init(context.Context) error
-	Listen(context.Context) (TriggerState, error)
+	Listen(context.Context) (TriggerState, *internal.Payload, error)
 	Create(internal.KillSwitchConfig) (Trigger, error)
 }
 
@@ -197,20 +198,23 @@ func (t *TriggerHandler) Run(ctx context.Context) error {
 
 		go func() {
 			defer close(ch)
-			state, err := t.WrappedTrigger.Listen(ctx)
-			ch <- TriggerEvent{State: state, Error: err}
+			state, payload, err := t.WrappedTrigger.Listen(ctx)
+			ch <- TriggerEvent{State: state, Payload: payload, Error: err}
 		}()
 
 		t.UpdateState(Armed, nil)
 		t.TimeStarted = time.Now()
 
 		var event TriggerEvent
+		var payload *internal.Payload
+
 		select {
 		case event = <-ch:
 			if event.State == Failed {
 				t.UpdateState(event.State, event.Error)
 				return event.Error
 			}
+			payload = event.Payload
 		case <-ctx.Done():
 			t.UpdateState(Cancelled, nil)
 			return nil
@@ -219,9 +223,9 @@ func (t *TriggerHandler) Run(ctx context.Context) error {
 		t.UpdateState(Firing, nil)
 		t.TimeFired = time.Now()
 		if event.State == Test || t.TestRun {
-			t.Action.DryExecute()
+			t.Action.DryExecute(payload)
 		} else if event.State == Triggered {
-			t.Action.Execute()
+			t.Action.Execute(payload)
 		}
 
 		t.UpdateState(Done, nil)

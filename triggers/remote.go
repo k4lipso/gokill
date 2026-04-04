@@ -19,26 +19,26 @@ func (t *Remote) Init(ctx context.Context) error {
 	return nil
 }
 
-func (t *Remote) Listen(ctx context.Context) (TriggerState, error) {
+func (t *Remote) Listen(ctx context.Context) (TriggerState, *internal.Payload, error) {
 	if remote.Handler == nil {
-		return Failed, fmt.Errorf("Remote Trigger failed to listen, remote handler is not initialized")
+		return Failed, nil, fmt.Errorf("Remote Trigger failed to listen, remote handler is not initialized")
 	}
 
 	channel, err := remote.Handler.RegisterRemoteTrigger(t.PeerGroupId, t.Secret, t.TestSecret)
 
 	if err != nil {
-		return Failed, fmt.Errorf("Could not register remote trigger")
+		return Failed, nil, fmt.Errorf("Could not register remote trigger")
 	}
 
 	select {
-	case msg := <-channel:
-		if msg == internal.TriggerMessageTrigger {
-			return Triggered, nil
+	case event := <-channel:
+		if event.IsTest {
+			return Triggered, event.Event.Payload, nil
 		} else {
-			return Test, nil
+			return Test, event.Event.Payload, nil
 		}
 	case <-ctx.Done():
-		return Cancelled, &TriggerCancelledError{}
+		return Cancelled, nil, &TriggerCancelledError{}
 	}
 }
 
