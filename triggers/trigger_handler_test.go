@@ -10,14 +10,14 @@ import (
 
 type MockTrigger struct {
 	OnInit   func(context.Context) error
-	OnListen func(context.Context) (TriggerState, error)
+	OnListen func(context.Context) (TriggerState, *internal.Payload, error)
 }
 
 func (m *MockTrigger) Init(ctx context.Context) error {
 	return m.OnInit(ctx)
 }
 
-func (m *MockTrigger) Listen(ctx context.Context) (TriggerState, error) {
+func (m *MockTrigger) Listen(ctx context.Context) (TriggerState, *internal.Payload, error) {
 	return m.OnListen(ctx)
 }
 
@@ -42,15 +42,21 @@ func (t *MockTrigger) GetOptions() []internal.ConfigOption {
 }
 
 type MockAction struct {
-	gotExecuted bool
-	gotTested   bool
+	gotExecuted    bool
+	gotTested      bool
+	gotPayload     bool
+	gotPayloadType internal.PayloadType
 }
 
-func (m *MockAction) Execute() {
+func (m *MockAction) Execute(p *internal.Payload) {
+	m.gotPayload = p != nil
+	if p != nil {
+		m.gotPayloadType = p.Type
+	}
 	m.gotExecuted = true
 }
 
-func (m *MockAction) DryExecute() {
+func (m *MockAction) DryExecute(*internal.Payload) {
 	m.gotTested = true
 }
 
@@ -64,15 +70,17 @@ func (m *MockAction) Create(internal.ActionConfig, actions.ActionResultChan) (ac
 
 func TestTriggerHandler(t *testing.T) {
 	type MockTriggerTest struct {
-		trigger                MockTrigger
-		action                 MockAction
-		loop                   bool
-		testRun                bool
-		cancelTimeout          int
-		expectedFinalState     TriggerState
-		expectedError          error
-		expectedActionExecuted bool
-		expectedActionTested   bool
+		trigger                   MockTrigger
+		action                    MockAction
+		loop                      bool
+		testRun                   bool
+		cancelTimeout             int
+		expectedFinalState        TriggerState
+		expectedError             error
+		expectedActionExecuted    bool
+		expectedActionPayload     bool
+		expectedActionPayloadType internal.PayloadType
+		expectedActionTested      bool
 	}
 
 	triggerList := []MockTriggerTest{
@@ -81,8 +89,8 @@ func TestTriggerHandler(t *testing.T) {
 				OnInit: func(ctx context.Context) error {
 					return nil
 				},
-				OnListen: func(ctx context.Context) (TriggerState, error) {
-					return Failed, &TriggerCancelledError{}
+				OnListen: func(ctx context.Context) (TriggerState, *internal.Payload, error) {
+					return Failed, nil, &TriggerCancelledError{}
 				},
 			},
 			action:                 MockAction{},
@@ -92,6 +100,7 @@ func TestTriggerHandler(t *testing.T) {
 			expectedFinalState:     Failed,
 			expectedError:          &TriggerCancelledError{},
 			expectedActionExecuted: false,
+			expectedActionPayload:  false,
 			expectedActionTested:   false,
 		},
 		{
@@ -99,8 +108,8 @@ func TestTriggerHandler(t *testing.T) {
 				OnInit: func(ctx context.Context) error {
 					return &TriggerCancelledError{}
 				},
-				OnListen: func(ctx context.Context) (TriggerState, error) {
-					return Triggered, nil
+				OnListen: func(ctx context.Context) (TriggerState, *internal.Payload, error) {
+					return Triggered, nil, nil
 				},
 			},
 			action:                 MockAction{},
@@ -110,6 +119,7 @@ func TestTriggerHandler(t *testing.T) {
 			expectedFinalState:     Failed,
 			expectedError:          &TriggerCancelledError{},
 			expectedActionExecuted: false,
+			expectedActionPayload:  false,
 			expectedActionTested:   false,
 		},
 		{
@@ -117,8 +127,8 @@ func TestTriggerHandler(t *testing.T) {
 				OnInit: func(ctx context.Context) error {
 					return nil
 				},
-				OnListen: func(ctx context.Context) (TriggerState, error) {
-					return Triggered, nil
+				OnListen: func(ctx context.Context) (TriggerState, *internal.Payload, error) {
+					return Triggered, nil, nil
 				},
 			},
 			action:                 MockAction{},
@@ -128,6 +138,7 @@ func TestTriggerHandler(t *testing.T) {
 			expectedFinalState:     Done,
 			expectedError:          nil,
 			expectedActionExecuted: false,
+			expectedActionPayload:  false,
 			expectedActionTested:   true,
 		},
 		{
@@ -135,8 +146,8 @@ func TestTriggerHandler(t *testing.T) {
 				OnInit: func(ctx context.Context) error {
 					return nil
 				},
-				OnListen: func(ctx context.Context) (TriggerState, error) {
-					return Test, nil
+				OnListen: func(ctx context.Context) (TriggerState, *internal.Payload, error) {
+					return Test, nil, nil
 				},
 			},
 			action:                 MockAction{},
@@ -146,6 +157,7 @@ func TestTriggerHandler(t *testing.T) {
 			expectedFinalState:     Done,
 			expectedError:          nil,
 			expectedActionExecuted: false,
+			expectedActionPayload:  false,
 			expectedActionTested:   true,
 		},
 		{
@@ -153,8 +165,8 @@ func TestTriggerHandler(t *testing.T) {
 				OnInit: func(ctx context.Context) error {
 					return nil
 				},
-				OnListen: func(ctx context.Context) (TriggerState, error) {
-					return Triggered, nil
+				OnListen: func(ctx context.Context) (TriggerState, *internal.Payload, error) {
+					return Triggered, nil, nil
 				},
 			},
 			action:                 MockAction{},
@@ -164,7 +176,32 @@ func TestTriggerHandler(t *testing.T) {
 			expectedFinalState:     Done,
 			expectedError:          nil,
 			expectedActionExecuted: true,
+			expectedActionPayload:  false,
 			expectedActionTested:   false,
+		},
+		{
+			trigger: MockTrigger{
+				OnInit: func(ctx context.Context) error {
+					return nil
+				},
+				OnListen: func(ctx context.Context) (TriggerState, *internal.Payload, error) {
+					payload := internal.Payload{
+						Type: internal.PayloadTypeMessage,
+						Data: nil,
+					}
+					return Triggered, &payload, nil
+				},
+			},
+			action:                    MockAction{},
+			loop:                      false,
+			testRun:                   false,
+			cancelTimeout:             10,
+			expectedFinalState:        Done,
+			expectedError:             nil,
+			expectedActionExecuted:    true,
+			expectedActionPayload:     true,
+			expectedActionPayloadType: internal.PayloadTypeMessage,
+			expectedActionTested:      false,
 		},
 	}
 
@@ -204,6 +241,16 @@ func TestTriggerHandler(t *testing.T) {
 
 		if test.action.gotExecuted != test.expectedActionExecuted {
 			t.Errorf("Incorrect action gotExecuted. Got: %v, wanted: %v", test.action.gotExecuted, test.expectedActionExecuted)
+		}
+
+		if test.action.gotPayload != test.expectedActionPayload {
+			t.Errorf("Incorrect action gotPayload. Got: %v, wanted: %v", test.action.gotPayload, test.expectedActionPayload)
+		}
+
+		if test.expectedActionPayload {
+			if test.action.gotPayloadType != test.expectedActionPayloadType {
+				t.Errorf("Incorrect action PayloadType. Got: %v, wanted: %v", test.action.gotPayloadType, test.expectedActionPayloadType)
+			}
 		}
 
 		if test.action.gotTested != test.expectedActionTested {
