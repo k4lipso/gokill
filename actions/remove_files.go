@@ -26,7 +26,7 @@ func (c RemoveFiles) getRemoveCommand() string {
 	return command
 }
 
-func (c RemoveFiles) DryExecute() {
+func (c RemoveFiles) DryExecute(*internal.Payload) {
 	internal.LogDoc(c).Infof("Test Execute")
 
 	command := c.getRemoveCommand()
@@ -43,7 +43,7 @@ func (c RemoveFiles) DryExecute() {
 	c.ActionChan <- nil
 }
 
-func (c RemoveFiles) Execute() {
+func (c RemoveFiles) Execute(*internal.Payload) {
 	internal.LogDoc(c).Infof("Execute")
 
 	command := c.getRemoveCommand()

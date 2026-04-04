@@ -8,15 +8,15 @@ import (
 )
 
 type TimeOut struct {
-	Duration   time.Duration
+	Duration time.Duration
 	ActionType
 }
 
-func (t TimeOut) DryExecute() {
-	t.Execute()
+func (t TimeOut) DryExecute(*internal.Payload) {
+	t.Execute(nil)
 }
 
-func (t TimeOut) Execute() {
+func (t TimeOut) Execute(*internal.Payload) {
 	internal.LogDoc(t).Infof("Waiting %d seconds", t.Duration)
 	time.Sleep(time.Duration(t.Duration) * time.Second)
 	t.ActionChan <- nil

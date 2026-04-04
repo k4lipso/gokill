@@ -77,7 +77,7 @@ func (t *Query) TestAction(conf internal.ActionConfig, result *error) error {
 		return err
 	}
 
-	go action.DryExecute()
+	go action.DryExecute(nil)
 	err = <-actionChan
 
 	if err != nil {

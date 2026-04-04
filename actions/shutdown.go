@@ -1,8 +1,8 @@
 package actions
 
 import (
-	"os/exec"
 	"encoding/json"
+	"os/exec"
 
 	"github.com/k4lipso/gokill/internal"
 )
@@ -12,13 +12,13 @@ type Shutdown struct {
 	ActionType
 }
 
-func (s Shutdown) DryExecute() {
+func (s Shutdown) DryExecute(*internal.Payload) {
 	internal.LogDoc(s).Infof("shutdown -h %s", s.Timeout)
 	internal.LogDoc(s).Info("Test Shutdown executed...")
 	s.ActionChan <- nil
 }
 
-func (s Shutdown) Execute() {
+func (s Shutdown) Execute(*internal.Payload) {
 	if err := exec.Command("shutdown", "-h", s.Timeout).Run(); err != nil {
 		internal.LogDoc(s).Errorf("Failed to initiate shutdown: %s", err)
 	}
@@ -66,10 +66,10 @@ func (p Shutdown) GetExample() string {
 func (p Shutdown) GetOptions() []internal.ConfigOption {
 	return []internal.ConfigOption{
 		{
-			Name: "time",
-			Type: "string",
+			Name:        "time",
+			Type:        "string",
 			Description: "TIME parameter passed to shutdown as follows ```shutdown -h TIME```",
-			Default: "now",
+			Default:     "now",
 		},
 	}
 }

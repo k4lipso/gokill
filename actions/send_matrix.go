@@ -95,7 +95,7 @@ func (s SendMatrix) sendMessage(message string) error {
 	return nil
 }
 
-func (s SendMatrix) DryExecute() {
+func (s SendMatrix) DryExecute(*internal.Payload) {
 	internal.LogDoc(s).Info("SendMatrix: Trying to send test message")
 	err := s.sendMessage(s.TestMessage)
 
@@ -106,7 +106,7 @@ func (s SendMatrix) DryExecute() {
 	s.ActionChan <- err
 }
 
-func (s SendMatrix) Execute() {
+func (s SendMatrix) Execute(*internal.Payload) {
 	internal.LogDoc(s).Info("SendMatrix: Trying to send message")
 	err := s.sendMessage(s.Message)
 

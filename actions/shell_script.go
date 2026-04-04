@@ -33,7 +33,7 @@ func isExecutableFile(path string) bool {
 	return true
 }
 
-func (c ShellScript) DryExecute() {
+func (c ShellScript) DryExecute(*internal.Payload) {
 	internal.LogDoc(c).Infof("Test Executing ShellScript:\n%s", c.Path)
 
 	_, err := os.Open(c.Path)
@@ -53,7 +53,7 @@ func (c ShellScript) DryExecute() {
 	c.ActionChan <- nil
 }
 
-func (c ShellScript) Execute() {
+func (c ShellScript) Execute(*internal.Payload) {
 	if !isExecutableFile(c.Path) {
 		internal.LogDoc(c).Warning("Executing Shellscript Failed.")
 		c.ActionChan <- fmt.Errorf("File is not executable: %s", c.Path)

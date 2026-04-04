@@ -23,7 +23,7 @@ func isCommandAvailable(name string) bool {
 	return true
 }
 
-func (c Command) DryExecute() {
+func (c Command) DryExecute(*internal.Payload) {
 	internal.LogDoc(c).Infof("Test Executing Command: %s", c.Command)
 	command, _, err := c.splitCommandString()
 
@@ -58,7 +58,7 @@ func (c Command) splitCommandString() (string, []string, error) {
 	return splitted[0], splitted[1:], nil
 }
 
-func (c Command) Execute() {
+func (c Command) Execute(*internal.Payload) {
 	command, args, err := c.splitCommandString()
 	internal.LogDoc(c).Infof("Executing command: %s", c.Command)
 

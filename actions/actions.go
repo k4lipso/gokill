@@ -10,8 +10,8 @@ import (
 type ActionResultChan chan error
 
 type Action interface {
-	Execute()
-	DryExecute()
+	Execute(*internal.Payload)
+	DryExecute(*internal.Payload)
 	GetActionChan() ActionResultChan
 	Create(internal.ActionConfig, ActionResultChan) (Action, error)
 }
@@ -60,12 +60,12 @@ func (a StagedActions) executeInternal(f func(Action)) {
 	}
 }
 
-func (a StagedActions) DryExecute() {
-	a.executeInternal(func(a Action) { a.DryExecute() })
+func (a StagedActions) DryExecute(p *internal.Payload) {
+	a.executeInternal(func(a Action) { a.DryExecute(p) })
 }
 
-func (a StagedActions) Execute() {
-	a.executeInternal(func(a Action) { a.Execute() })
+func (a StagedActions) Execute(p *internal.Payload) {
+	a.executeInternal(func(a Action) { a.Execute(p) })
 }
 
 func (a StagedActions) Create(config internal.ActionConfig, c ActionResultChan) (Action, error) {

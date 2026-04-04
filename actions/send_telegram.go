@@ -1,8 +1,8 @@
 package actions
 
 import (
-	"fmt"
 	"encoding/json"
+	"fmt"
 	//"strconv"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -11,9 +11,9 @@ import (
 )
 
 type SendTelegram struct {
-	Token string `json:"token"`
-	ChatId int64 `json:"chatId"`
-	Message string `json:"message"`
+	Token       string `json:"token"`
+	ChatId      int64  `json:"chatId"`
+	Message     string `json:"message"`
 	TestMessage string `json:"testMessage"`
 	ActionType
 }
@@ -39,7 +39,7 @@ func (s SendTelegram) sendMessage(message string) error {
 	return nil
 }
 
-func (s SendTelegram) DryExecute() {
+func (s SendTelegram) DryExecute(*internal.Payload) {
 	internal.LogDoc(s).Info("SendTelegram: Trying to send test message")
 	err := s.sendMessage(s.TestMessage)
 
@@ -50,9 +50,9 @@ func (s SendTelegram) DryExecute() {
 	s.ActionChan <- err
 }
 
-func (s SendTelegram) Execute() {
+func (s SendTelegram) Execute(*internal.Payload) {
 	internal.LogDoc(s).Info("SendTelegram: Trying to send message")
-	err := s.sendMessage(s.Message)	
+	err := s.sendMessage(s.Message)
 
 	if err != nil {
 		internal.LogDoc(s).Info("SendTelegram: failed to send message")
@@ -121,28 +121,28 @@ func (p SendTelegram) GetExample() string {
 func (p SendTelegram) GetOptions() []internal.ConfigOption {
 	return []internal.ConfigOption{
 		{
-			Name: "token",
-			Type: "string",
+			Name:        "token",
+			Type:        "string",
 			Description: "telegram bot token (ask botfather)",
-			Default: "",
+			Default:     "",
 		},
 		{
-			Name: "chatId",
-			Type: "int",
+			Name:        "chatId",
+			Type:        "int",
 			Description: "chatId of group or chat you want the message be sent to.",
-			Default: "",
+			Default:     "",
 		},
 		{
-			Name: "message",
-			Type: "string",
+			Name:        "message",
+			Type:        "string",
 			Description: "actual message that should be sent",
-			Default: "",
+			Default:     "",
 		},
 		{
-			Name: "testMessage",
-			Type: "string",
+			Name:        "testMessage",
+			Type:        "string",
 			Description: "message sent during test run",
-			Default: "",
+			Default:     "",
 		},
 	}
 }
