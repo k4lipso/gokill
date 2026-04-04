@@ -146,26 +146,24 @@ func (s *SipHandler) start(ctx context.Context, recipientURI string, regOpts dia
 		},
 	))
 
-	// Start listening incoming calls
 	go func() {
 		tu.Serve(ctx, func(inDialog *diago.DialogServerSession) {
 			internal.Log.Infof("New dialog request with id: %s", inDialog.ID)
 			defer internal.Log.Infof("Dialog finished. Id: %s", inDialog.ID)
 			if err := s.Playback(inDialog); err != nil {
-				internal.Log.Errorf("Failed to play: ", err)
+				internal.Log.Errorf("Failed to play: %s", err)
 			}
 		})
 	}()
 
-	// Do register or fail on error
 	return tu.Register(ctx, recipient, regOpts)
 }
 
 func (s *SipHandler) Playback(inDialog *diago.DialogServerSession) error {
-	inDialog.Trying()  // Progress -> 100 Trying
-	inDialog.Ringing() // Ringing -> 180 Response
+	inDialog.Trying()
+	inDialog.Ringing()
 	time.Sleep(time.Second * 3)
-	inDialog.Answer() // Answer -> 200 Response
+	inDialog.Answer()
 
 	playfile, err := os.Open(s.AudioFilePath)
 	if err != nil {
@@ -193,7 +191,12 @@ func (s *SipHandler) Playback(inDialog *diago.DialogServerSession) error {
 		internal.Log.Infof("Received DTMF: %s", string(dtmf))
 		dtmfPin += string(dtmf)
 
-		err := s.ExecuteRemoteTrigger(dtmfPin)
+		event := internal.TriggerEvent{
+			Secret:  dtmfPin,
+			Payload: nil,
+		}
+
+		err := s.ExecuteRemoteTrigger(event)
 
 		if err == nil {
 			dtmfPin = ""
