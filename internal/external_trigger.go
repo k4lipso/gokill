@@ -23,13 +23,13 @@ func (p Payload) AsMessage() (PayloadMessage, error) {
 	}
 
 	var result PayloadMessage
-	data, ok := p.Data.([]byte)
+	data, ok := p.Data.(string)
 
 	if !ok {
 		return PayloadMessage{}, fmt.Errorf("Could not convert Data to byte array")
 	}
 
-	err := json.Unmarshal(data, &result)
+	err := json.Unmarshal([]byte(data), &result)
 
 	if err != nil {
 		return PayloadMessage{}, fmt.Errorf("Could not decode message from json. Reason: %s", err)
@@ -55,7 +55,7 @@ func (p PayloadMessage) ToPayload() (Payload, error) {
 
 	return Payload{
 		Type: PayloadTypeMessage,
-		Data: data,
+		Data: string(data),
 	}, err
 }
 
