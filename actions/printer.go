@@ -11,7 +11,7 @@ type Printer struct {
 	ActionType
 }
 
-func (p Printer) Execute(payload *internal.Payload) {
+func (p Printer) executeInternal(payload *internal.Payload) {
 	internal.LogDoc(p).Infof("Print action fires. Message: %s", p.Message)
 
 	if payload == nil || payload.Type != internal.PayloadTypeMessage {
@@ -30,9 +30,12 @@ func (p Printer) Execute(payload *internal.Payload) {
 	p.ActionChan <- nil
 }
 
-func (p Printer) DryExecute(*internal.Payload) {
-	internal.LogDoc(p).Infof("Print action fire test. Message: %s", p.Message)
-	p.ActionChan <- nil
+func (p Printer) Execute(payload *internal.Payload) {
+	p.executeInternal(payload)
+}
+
+func (p Printer) DryExecute(payload *internal.Payload) {
+	p.executeInternal(payload)
 }
 
 func (p Printer) Create(config internal.ActionConfig, c ActionResultChan) (Action, error) {
