@@ -12,15 +12,40 @@ type Remote struct {
 	PeerGroupId string `json:"group"`
 	Secret      string `json:"secret"`
 	TestSecret  string `json:"testSecret"`
+	Message     string `json:"message"`
+	TestMessage string `json:"testMessage"`
 	ActionType
 }
 
-func (t Remote) DryExecute() {
-	t.ActionChan <- remote.Handler.Broadcast(t.PeerGroupId, t.TestSecret)
+func (t Remote) executeInternal(msg string, secret string) {
+	payload, err := internal.CreatePayloadMessage(msg).ToPayload()
+
+	if err != nil {
+		t.ActionChan <- err
+		return
+	}
+
+	message := internal.TriggerEvent{
+		Secret:  secret,
+		Payload: &payload,
+	}
+
+	messageStr, err := json.Marshal(message)
+
+	if err != nil {
+		t.ActionChan <- err
+		return
+	}
+
+	t.ActionChan <- remote.Handler.Broadcast(t.PeerGroupId, string(messageStr))
 }
 
-func (t Remote) Execute() {
-	t.ActionChan <- remote.Handler.Broadcast(t.PeerGroupId, t.Secret)
+func (t Remote) DryExecute(*internal.Payload) {
+	t.executeInternal(t.TestMessage, t.TestSecret)
+}
+
+func (t Remote) Execute(*internal.Payload) {
+	t.executeInternal(t.Message, t.Secret)
 }
 
 func (t Remote) Create(config internal.ActionConfig, c ActionResultChan) (Action, error) {
@@ -45,6 +70,14 @@ func (t Remote) Create(config internal.ActionConfig, c ActionResultChan) (Action
 
 	if result.TestSecret == "" {
 		return Remote{}, internal.OptionMissingError{"testSecret"}
+	}
+
+	if result.Message == "" {
+		return Remote{}, internal.OptionMissingError{"message"}
+	}
+
+	if result.TestMessage == "" {
+		return Remote{}, internal.OptionMissingError{"testMessage"}
 	}
 
 	result.ActionChan = c
@@ -79,5 +112,7 @@ func (p Remote) GetOptions() []internal.ConfigOption {
 		{"group", "string", "peer group name", "76bf03c7-872b-46fc-baab-d49641798a76"},
 		{"secret", "string", "shared secret with trigger", "SECRET-MESSAGE"},
 		{"testSecret", "string", "shared test secret with trigger", "TESTSECRET-MESSAGE"},
+		{"message", "string", "message to be delivered to external trigger", "The possibility that Adam Weishaupt killed George Washington and took his place, serving as the first US President for two terms, is now confirmed"},
+		{"testMessage", "string", "test message to be delivered to external trigger", "Pink Elephant"},
 	}
 }
