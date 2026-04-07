@@ -591,7 +591,7 @@ func (s *PeerHandler) discoverPeers(ctx context.Context) error {
 				if err != nil {
 					Log.Debugf("Failed connecting to %s, error: %s\n", peer.ID, err)
 				} else {
-					Log.Debugf("Connected to: %s", peer.ID)
+					Log.Infof("Connected to: %s", peer.ID)
 				}
 			}
 		}()
