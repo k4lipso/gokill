@@ -32,7 +32,7 @@ func (t *Remote) Listen(ctx context.Context) (TriggerState, *internal.Payload, e
 
 	select {
 	case event := <-channel:
-		if event.IsTest {
+		if !event.IsTest {
 			return Triggered, event.Event.Payload, nil
 		} else {
 			return Test, event.Event.Payload, nil
