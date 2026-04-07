@@ -13,7 +13,7 @@ type Remote struct {
 	PeerGroupId   string `json:"group"`
 	Secret        string `json:"secret"`
 	TestSecret    string `json:"testSecret"`
-	RemoteTrigger internal.ExternalTrigger
+	remoteTrigger internal.ExternalTrigger
 }
 
 func (t *Remote) Init(ctx context.Context) error {
@@ -27,16 +27,12 @@ func (t *Remote) Init(ctx context.Context) error {
 		return fmt.Errorf("Remote Trigger failed to initialize, given group was not found")
 	}
 
-	t.RemoteTrigger = peerGroup
+	t.remoteTrigger = peerGroup
 	return nil
 }
 
 func (t *Remote) Listen(ctx context.Context) (TriggerState, *internal.Payload, error) {
-	if t.RemoteTrigger == nil {
-		return Failed, nil, fmt.Errorf("Remote Trigger failed to listen, remote handler is not initialized")
-	}
-
-	channel, err := t.RemoteTrigger.RegisterRemoteTrigger(t.Secret, t.TestSecret)
+	channel, err := t.remoteTrigger.RegisterRemoteTrigger(t.Secret, t.TestSecret)
 
 	if err != nil {
 		return Failed, nil, fmt.Errorf("Could not register remote trigger")
