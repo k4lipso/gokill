@@ -31,7 +31,7 @@ func (t *Sip) Listen(ctx context.Context) (TriggerState, *internal.Payload, erro
 
 	select {
 	case event := <-channel:
-		if event.IsTest {
+		if !event.IsTest {
 			return Triggered, nil, nil
 		} else {
 			return Test, nil, nil
