@@ -12,18 +12,20 @@ import (
 type Sip struct {
 	Secret     string `json:"pin"`
 	TestSecret string `json:"testPin"`
+	sipTrigger internal.ExternalTrigger
 }
 
 func (t *Sip) Init(ctx context.Context) error {
+	if sip.Handler == nil {
+		return fmt.Errorf("Sip Trigger failed to initialize, sip handler is not initialized")
+	}
+
+	t.sipTrigger = sip.Handler
 	return nil
 }
 
 func (t *Sip) Listen(ctx context.Context) (TriggerState, *internal.Payload, error) {
-	if sip.Handler == nil {
-		return Failed, nil, fmt.Errorf("Sip Trigger failed to listen, Sip handler is not initialized")
-	}
-
-	channel, err := sip.Handler.RegisterRemoteTrigger(t.Secret, t.TestSecret)
+	channel, err := t.sipTrigger.RegisterRemoteTrigger(t.Secret, t.TestSecret)
 
 	if err != nil {
 		return Failed, nil, fmt.Errorf("Could not register Sip trigger")
