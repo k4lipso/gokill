@@ -74,6 +74,10 @@ type TriggerChannel struct {
 	Channel chan TriggerChannelEvent
 }
 
+type ExternalTrigger interface {
+	RegisterRemoteTrigger(secret string, testSecret string) (chan TriggerChannelEvent, error)
+}
+
 type ExternalTriggerMap struct {
 	TriggerChannels map[string]TriggerChannel
 }

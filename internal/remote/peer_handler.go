@@ -372,6 +372,11 @@ func (s *PeerHandler) GetDefaultPeerGroup(Name string) *PeerGroup {
 	return s.PeerGroups["root"]
 }
 
+func (s *PeerHandler) GetPeerGroupByName(name string) *PeerGroup {
+	val, _ := s.PeerGroups[name]
+	return val
+}
+
 func (s *PeerHandler) InitPeerGroups() {
 	peerGroupMap := make(map[string]*PeerGroup)
 	Log.Debugf("Init PeerGroups")
