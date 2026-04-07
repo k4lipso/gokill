@@ -5,12 +5,26 @@ import (
 	"testing"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+
+	"github.com/k4lipso/gokill/internal"
 )
 
 type TriggerCancelTest struct {
 	trigger       Trigger
 	expectedError error
 	expectedState TriggerState
+}
+
+type MockExternalTrigger struct {
+	events []internal.TriggerChannelEvent
+}
+
+func (m *MockExternalTrigger) RegisterRemoteTrigger(string, string) (chan internal.TriggerChannelEvent, error) {
+	ch := make(chan internal.TriggerChannelEvent, 1)
+	for _, event := range m.events {
+		ch <- event
+	}
+	return ch, nil
 }
 
 type MockTelegramBotAPI struct {
@@ -49,6 +63,20 @@ func TestListenTriggerCancellation(t *testing.T) {
 		{
 			trigger: &ReceiveTelegram{
 				bot: &MockTelegramBotAPI{},
+			},
+			expectedError: &TriggerCancelledError{},
+			expectedState: Cancelled,
+		},
+		{
+			trigger: &Remote{
+				remoteTrigger: &MockExternalTrigger{},
+			},
+			expectedError: &TriggerCancelledError{},
+			expectedState: Cancelled,
+		},
+		{
+			trigger: &Sip{
+				sipTrigger: &MockExternalTrigger{},
 			},
 			expectedError: &TriggerCancelledError{},
 			expectedState: Cancelled,
