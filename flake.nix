@@ -27,7 +27,7 @@
         gotools
         mdbook
         olm
-
+        act
         dpkg
       ];
     };
