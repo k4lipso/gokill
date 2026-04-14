@@ -7,7 +7,10 @@
   outputs = { self, nixpkgs, utils, ... }: 
 
   nixpkgs.lib.attrsets.recursiveUpdate 
-  (utils.lib.eachSystem (utils.lib.defaultSystems) ( system:
+  (utils.lib.eachSystem [
+    "aarch64-linux"
+    "x86_64-linux"
+  ] ( system:
   let
     pkgs = import nixpkgs {
       inherit system;
