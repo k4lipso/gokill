@@ -58,10 +58,7 @@ func TestExternalTriggerMap(t *testing.T) {
 		},
 	}
 
-	triggerMap := make(map[string]TriggerChannel)
-	externalTriggerMap := ExternalTriggerMap{
-		TriggerChannels: triggerMap,
-	}
+	externalTriggerMap := ExternalTriggerMap{}
 	//we expect test to finish within 10 seconds, otherwise deadlock expected
 	timeout := time.After(10 * time.Second)
 	done := make(chan bool)

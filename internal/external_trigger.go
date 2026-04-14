@@ -3,6 +3,7 @@ package internal
 import (
 	"encoding/json"
 	"fmt"
+	"sync"
 	"time"
 )
 
@@ -79,7 +80,7 @@ type ExternalTrigger interface {
 }
 
 type ExternalTriggerMap struct {
-	TriggerChannels map[string]TriggerChannel
+	TriggerChannels sync.Map
 }
 
 func (n *ExternalTriggerMap) RegisterRemoteTrigger(secret string, testSecret string) (chan TriggerChannelEvent, error) {
@@ -87,36 +88,38 @@ func (n *ExternalTriggerMap) RegisterRemoteTrigger(secret string, testSecret str
 		return nil, fmt.Errorf("Empty secret or testSecret. That is not allowed!")
 	}
 
-	triggerChannel, exists := n.TriggerChannels[secret]
+	triggerChannel, exists := n.TriggerChannels.Load(secret)
 
 	if exists {
-		return triggerChannel.Channel, nil
+		return triggerChannel.(TriggerChannel).Channel, nil
 	}
 
 	channel := make(chan TriggerChannelEvent)
 
-	n.TriggerChannels[secret] = TriggerChannel{
+	n.TriggerChannels.Store(secret, TriggerChannel{
 		IsTest:  false,
 		Channel: channel,
-	}
+	})
 
-	n.TriggerChannels[testSecret] = TriggerChannel{
+	n.TriggerChannels.Store(testSecret, TriggerChannel{
 		IsTest:  true,
 		Channel: channel,
-	}
+	})
 
 	return channel, nil
 }
 
 func (n *ExternalTriggerMap) ExecuteRemoteTrigger(event TriggerEvent) error {
-	val, ok := n.TriggerChannels[event.Secret]
+	val, ok := n.TriggerChannels.Load(event.Secret)
 
 	if !ok {
 		return fmt.Errorf("Cant execute remote trigger! Trigger with secret: '%s' does not exists.", event.Secret)
 	}
 
-	val.Channel <- TriggerChannelEvent{
-		IsTest: val.IsTest,
+	tc := val.(TriggerChannel)
+
+	tc.Channel <- TriggerChannelEvent{
+		IsTest: tc.IsTest,
 		Event:  event,
 	}
 

@@ -80,15 +80,13 @@ func CreateSipHandler(ctx context.Context, sipConfigPath string) (SipHandler, er
 	}
 
 	result := SipHandler{
-		ExternalTriggerMap: internal.ExternalTriggerMap{
-			TriggerChannels: make(map[string]internal.TriggerChannel),
-		},
-		Username:      config.Username,
-		Password:      config.Password,
-		Registrar:     config.Registrar,
-		RecipientUri:  config.SipUri,
-		AudioFilePath: config.AudioFilePath,
-		ListenAddress: config.ListenAddress,
+		ExternalTriggerMap: internal.ExternalTriggerMap{},
+		Username:           config.Username,
+		Password:           config.Password,
+		Registrar:          config.Registrar,
+		RecipientUri:       config.SipUri,
+		AudioFilePath:      config.AudioFilePath,
+		ListenAddress:      config.ListenAddress,
 	}
 
 	return result, nil

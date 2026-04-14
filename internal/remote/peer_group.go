@@ -179,14 +179,12 @@ func CreatePeerGroup(ID string, peerHandler *PeerHandler) (*PeerGroup, error) {
 	}
 
 	peerGroup := PeerGroup{
-		ExternalTriggerMap: ExternalTriggerMap{
-			TriggerChannels: make(map[string]TriggerChannel),
-		},
-		ID:           ID,
-		topic:        topic,
-		ctx:          ctx,
-		Key:          peerHandler.Key,
-		TrustedPeers: val,
+		ExternalTriggerMap: ExternalTriggerMap{},
+		ID:                 ID,
+		topic:              topic,
+		ctx:                ctx,
+		Key:                peerHandler.Key,
+		TrustedPeers:       val,
 	}
 
 	go handleMessages(ctx, sub, &peerGroup)
