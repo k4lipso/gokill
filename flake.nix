@@ -130,6 +130,10 @@
         modules = [
           self.nixosModules.gokill
           {
+            nixpkgs.config.permittedInsecurePackages = [
+              "olm-3.2.16"
+            ];
+
             services.gokill.enable = true;
             services.gokill.testRun = false;
             services.gokill.triggers = [
