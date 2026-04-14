@@ -45,6 +45,8 @@
 
       default = self.packages.${system}.gokill;
     };
+  
+    hydraJobs.gokill = self.packages.${system}.gokill;
 
     bundlers.gokillDeb = pkg: pkgs.stdenv.mkDerivation {
       name = "deb-single-${pkg.name}";
