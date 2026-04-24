@@ -9,6 +9,7 @@ let
   remoteConfigFile = pkgs.writeText "remote-config.json" (builtins.toJSON cfg.remote.config); 
   testRun = if cfg.testRun then "-t" else "";
   remoteCfg = if cfg.remote.config.groups != [] then "-remote-config ${remoteConfigFile}" else "";
+  sip = if cfg.sip.config.file != "" then "-sip-config ${cfg.sip.config.file}" else "";
   remote = if cfg.remote.enable then "-r" else "";
   keyAge = if cfg.remote.ageKeyFile != "" then "-key-age ${cfg.remote.ageKeyFile}" else "";
   keyP2p = if cfg.remote.p2pKeyFile != "" then "-key-p2p ${cfg.remote.p2pKeyFile}" else "";
@@ -55,6 +56,14 @@ in
           description = mdDoc ''
             Path to gokill p2p key
             '';
+        };
+      };
+
+      sip.config = {
+        file = mkOption {
+          description = "path to file containing sip config. since it contains secret we want it in nix store";
+          default = "";
+          type = types.str;
         };
       };
 
@@ -169,7 +178,7 @@ in
       description = "gokill daemon";
       serviceConfig = {
         Type = "simple";
-        ExecStart = "${gokill-pkg}/bin/gokill --db /etc/gokill --verbose ${remote} ${keyAge} ${keyP2p} ${remoteCfg} -c ${configFile} ${testRun}";
+        ExecStart = "${gokill-pkg}/bin/gokill --db /etc/gokill --verbose ${sip} ${remote} ${keyAge} ${keyP2p} ${remoteCfg} -c ${configFile} ${testRun}";
         Restart = "on-failure";
       };
 
