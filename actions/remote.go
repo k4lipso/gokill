@@ -101,7 +101,8 @@ func (p Remote) GetExample() string {
 		"type": "Remote",
 		"options": {
 			"group": "myGroupName",
-			"secret": "daljqnxliqhlqdpuiwqdklqfhqlkwh"
+			"secret": "daljqnxliqhlqdpuiwqdklqfhqlkwh",
+			"testSecret": "test"
 		}
 	}
 	`
@@ -110,9 +111,9 @@ func (p Remote) GetExample() string {
 func (p Remote) GetOptions() []internal.ConfigOption {
 	return []internal.ConfigOption{
 		{"group", "string", "peer group name", "76bf03c7-872b-46fc-baab-d49641798a76"},
-		{"secret", "string", "shared secret with trigger", "SECRET-MESSAGE"},
-		{"testSecret", "string", "shared test secret with trigger", "TESTSECRET-MESSAGE"},
-		{"message", "string", "message to be delivered to external trigger", "The possibility that Adam Weishaupt killed George Washington and took his place, serving as the first US President for two terms, is now confirmed"},
-		{"testMessage", "string", "test message to be delivered to external trigger", "Pink Elephant"},
+		{"secret", "string", "shared secret with trigger", ""},
+		{"testSecret", "string", "shared test secret with trigger", ""},
+		{"message", "string", "message to be delivered to external trigger", ""},
+		{"testMessage", "string", "test message to be delivered to external trigger", ""},
 	}
 }
