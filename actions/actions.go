@@ -131,6 +131,7 @@ func GetAllActions() []DocumentedAction {
 		SendTelegram{},
 		TimeOut{},
 		Remote{},
+		ReadFile{},
 	}
 }
 
