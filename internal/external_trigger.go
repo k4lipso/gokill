@@ -10,6 +10,7 @@ import (
 type PayloadType string
 
 const (
+	PayloadTypeDummy   PayloadType = "dummy"
 	PayloadTypeMessage PayloadType = "message"
 )
 

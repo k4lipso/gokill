@@ -206,7 +206,9 @@ func (t *TriggerHandler) Run(ctx context.Context) error {
 		t.TimeStarted = time.Now()
 
 		var event TriggerEvent
-		var payload *internal.Payload
+		payload := &internal.Payload{
+			Type: internal.PayloadTypeDummy,
+		}
 
 		select {
 		case event = <-ch:
@@ -214,7 +216,9 @@ func (t *TriggerHandler) Run(ctx context.Context) error {
 				t.UpdateState(event.State, event.Error)
 				return event.Error
 			}
-			payload = event.Payload
+			if event.Payload != nil {
+				payload = event.Payload
+			}
 		case <-ctx.Done():
 			t.UpdateState(Cancelled, nil)
 			return nil
