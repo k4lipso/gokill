@@ -9,7 +9,9 @@ import (
 )
 
 type ReadFile struct {
-	File string `json:"file"`
+	File        string `json:"file"`
+	ReadOnInit  bool   `json:"readOnInit"`
+	FileContent string
 	ActionType
 }
 
@@ -25,17 +27,27 @@ func (c ReadFile) DryExecute(payload *internal.Payload) {
 	c.ActionChan <- nil
 }
 
-func (c ReadFile) Execute(payload *internal.Payload) {
+func (c *ReadFile) setFileContent() error {
 	b, err := os.ReadFile(c.File)
 
 	if err != nil {
-		c.ActionChan <- fmt.Errorf("Error while reading file: %s", err)
-		return
+		return err
 	}
 
-	fileContent := string(b)
+	c.FileContent = string(b)
+	return nil
+}
 
-	messagePayload, err := internal.CreatePayloadMessage(fileContent).ToPayload()
+func (c ReadFile) Execute(payload *internal.Payload) {
+	if !c.ReadOnInit {
+		err := c.setFileContent()
+		if err != nil {
+			c.ActionChan <- fmt.Errorf("Error while reading file: %s", err)
+			return
+		}
+	}
+
+	messagePayload, err := internal.CreatePayloadMessage(c.FileContent).ToPayload()
 
 	if err != nil {
 		c.ActionChan <- fmt.Errorf("Error while creating message payload: %s", err)
@@ -59,6 +71,13 @@ func CreateReadFile(config internal.ActionConfig, c ActionResultChan) (ReadFile,
 		return ReadFile{}, internal.OptionMissingError{"file"}
 	}
 
+	if result.ReadOnInit {
+		err := result.setFileContent()
+		if err != nil {
+			return ReadFile{}, fmt.Errorf("Error reading file: %s", err)
+		}
+	}
+
 	result.ActionChan = c
 
 	return result, nil
@@ -74,7 +93,7 @@ func (p ReadFile) GetName() string {
 
 func (p ReadFile) GetDescription() string {
 	return `
-ReadFile reads the given file and attaches its content to a message payload.
+ReadFile reads the given file and attaches its content to a message payload.  
 	`
 }
 
@@ -83,7 +102,8 @@ func (p ReadFile) GetExample() string {
 	{
 		"type": "ReadFile",
 		"options": {
-			"file": "/home/user/secrets.txt"
+			"file": "/home/user/secrets.txt",
+			"readOnInit": false
 		}
 	}
 	`
@@ -92,5 +112,6 @@ func (p ReadFile) GetExample() string {
 func (p ReadFile) GetOptions() []internal.ConfigOption {
 	return []internal.ConfigOption{
 		{"file", "string", "absolute path to a file that read.", ""},
+		{"readOnOinit", "bool", "Read file content during initialization instead during execution", "false"},
 	}
 }
