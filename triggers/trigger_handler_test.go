@@ -2,6 +2,7 @@ package triggers
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/k4lipso/gokill/actions"
@@ -169,15 +170,16 @@ func TestTriggerHandler(t *testing.T) {
 					return Triggered, nil, nil
 				},
 			},
-			action:                 MockAction{},
-			loop:                   false,
-			testRun:                false,
-			cancelTimeout:          10,
-			expectedFinalState:     Done,
-			expectedError:          nil,
-			expectedActionExecuted: true,
-			expectedActionPayload:  false,
-			expectedActionTested:   false,
+			action:                    MockAction{},
+			loop:                      false,
+			testRun:                   false,
+			cancelTimeout:             10,
+			expectedFinalState:        Done,
+			expectedError:             nil,
+			expectedActionExecuted:    true,
+			expectedActionPayload:     true,
+			expectedActionPayloadType: internal.PayloadTypeDummy,
+			expectedActionTested:      false,
 		},
 		{
 			trigger: MockTrigger{
@@ -208,7 +210,8 @@ func TestTriggerHandler(t *testing.T) {
 	internal.InitLogger()
 	internal.SetVerbose(true)
 
-	for _, test := range triggerList {
+	for idx, test := range triggerList {
+		fmt.Println("Test Case ", idx)
 		ctx := context.Background()
 		config := internal.KillSwitchConfig{Name: "Test Trigger", Loop: test.loop}
 		handler := NewTriggerHandler(config)
@@ -232,33 +235,33 @@ func TestTriggerHandler(t *testing.T) {
 		}
 
 		if err != test.expectedError {
-			t.Errorf("Incorrect Error returned. Got: %s, wanted: %v", err, test.expectedError)
+			t.Errorf("[TestCase %d] Incorrect Error returned. Got: %s, wanted: %v", idx, err, test.expectedError)
 		}
 
 		if lastUpdate.State != test.expectedFinalState {
-			t.Errorf("Incorrect State returned. Got: %s, wanted: %v", lastUpdate.State, test.expectedFinalState)
+			t.Errorf("[TestCase %d] Incorrect State returned. Got: %s, wanted: %v", idx, lastUpdate.State, test.expectedFinalState)
 		}
 
 		if test.action.gotExecuted != test.expectedActionExecuted {
-			t.Errorf("Incorrect action gotExecuted. Got: %v, wanted: %v", test.action.gotExecuted, test.expectedActionExecuted)
+			t.Errorf("[TestCase %d] Incorrect action gotExecuted. Got: %v, wanted: %v", idx, test.action.gotExecuted, test.expectedActionExecuted)
 		}
 
 		if test.action.gotPayload != test.expectedActionPayload {
-			t.Errorf("Incorrect action gotPayload. Got: %v, wanted: %v", test.action.gotPayload, test.expectedActionPayload)
+			t.Errorf("[TestCase %d] Incorrect action gotPayload. Got: %v, wanted: %v", idx, test.action.gotPayload, test.expectedActionPayload)
 		}
 
 		if test.expectedActionPayload {
 			if test.action.gotPayloadType != test.expectedActionPayloadType {
-				t.Errorf("Incorrect action PayloadType. Got: %v, wanted: %v", test.action.gotPayloadType, test.expectedActionPayloadType)
+				t.Errorf("[TestCase %d] Incorrect action PayloadType. Got: %v, wanted: %v", idx, test.action.gotPayloadType, test.expectedActionPayloadType)
 			}
 		}
 
 		if test.action.gotTested != test.expectedActionTested {
-			t.Errorf("Incorrect action gotTested. Got: %v, wanted: %v", test.action.gotTested, test.expectedActionTested)
+			t.Errorf("[TestCase %d] Incorrect action gotTested. Got: %v, wanted: %v", idx, test.action.gotTested, test.expectedActionTested)
 		}
 
 		if handler.Running != false {
-			t.Errorf("Incorrect Running State. Got: %v, wanted: %v", handler.Running, false)
+			t.Errorf("[TestCase %d] Incorrect Running State. Got: %v, wanted: %v", idx, handler.Running, false)
 		}
 	}
 }
